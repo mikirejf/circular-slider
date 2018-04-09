@@ -4,7 +4,8 @@
   "description": "A task for a Front-End Engineer job at Celtra.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "webpack-dev-server --hot --inline",
+    "build": "webpack --mode production" 
   },
   "keywords": [
     "celtra",
@@ -12,5 +13,10 @@
     "front-end"
   ],
   "author": "Andrej Premrn <andrej.premrn@gmail.com>",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "webpack": "^4.5.0",
+    "webpack-cli": "^2.0.14",
+    "webpack-dev-server": "^3.1.3"
+  }
 }
