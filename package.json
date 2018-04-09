@@ -1,0 +1,16 @@
+{
+  "name": "web-developer-task",
+  "version": "1.0.0",
+  "description": "A task for a Front-End Engineer job at Celtra.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "celtra",
+    "task",
+    "front-end"
+  ],
+  "author": "Andrej Premrn <andrej.premrn@gmail.com>",
+  "license": "MIT"
+}
