@@ -4,6 +4,7 @@ export default class CircularSlider {
 
     this.props = Object.assign({}, options, {
       strokeWidth,
+      size: 2 * options.radius,
       trueRadius: options.radius - strokeWidth / 2,
       knobRadius: strokeWidth / 2
     });
@@ -18,13 +19,15 @@ export default class CircularSlider {
   _createSliderSVG() {
     // Need to reference each mask with unique `id` to avoid collisions.
     const uid = this._getGUID();
-    const svg = this._createSVGDOMElement('svg', { width: 400, height: 400 });
+    const svg = this._createSVGDOMElement('svg', {
+      width: this.props.size, height: this.props.size 
+    });
     const mask = this._createSVGDOMElement('mask', { id: uid });
     const maskRect = this._createSVGDOMElement('rect', {
       x: 0,
       y: 0,
-      width: 400,
-      height: 400,
+      width: this.props.size,
+      height: this.props.size,
       fill: 'white'
     });
     const knob = this._createSVGDOMElement('circle', {
