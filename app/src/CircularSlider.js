@@ -89,12 +89,36 @@ export default class CircularSlider {
     this.props.container.appendChild(svg);
   }
 
+  _initTouchActions() {
+    const handleMove = (e) => {
+      const angleInDegrees = this._getAngleFromEvent(e);
+      const arcPath = this._createArcPath(
+        this.props.radius,
+        this.props.radius,
+        this.props.trueRadius,
+        0,
+        angleInDegrees
+      );
+
+      this.refs.arc.setAttributeNS(null, 'd', arcPath);
+    };
+
+    document.addEventListener('touchmove', (e) => {
+      handleMove({
+        clientX: e.touches[0].clientX,
+        clientY: e.touches[0].clientY
+      })
+    });
+    document.addEventListener('mousemove', handleMove);
+  }
+
   _getAngleFromEvent(e) {
     const { top, left } = this.refs.svg.getBoundingClientRect();
     const angleInRadians = Math.atan2(
       e.clientY - (this.props.radius + top),
       e.clientX - (this.props.radius + left)
     );
+    // TODO: do something about normalization
     // Normalize the grid so that 0 deg is at 12 o'clock and it goes in clock's
     // direction.      
     const angleInDegrees = (this._radiansToDegrees(angleInRadians) + 450) % 360;
@@ -134,8 +158,22 @@ export default class CircularSlider {
     return angleInDegrees / 180 * Math.PI;
   }
   
-  _createArcPath() {
+  _createArcPath(x, y, radius, startAngle, endAngle) {
+    // TODO: do something about grid normalization
+    // There is a problem with drawing a full 360deg arc, because we are drawing
+    // the arc from "itself" to "itself" (?). To correct that, we are 
+    // subtracting `0.00001` (can't go lower) from `endAngle`, so we never have 
+    // a full 360 value.
+    const start = this._polarToCartesian(x, y, radius, this._degreesToRadians(endAngle - 90.00001));
+    const end = this._polarToCartesian(x, y, radius, this._degreesToRadians(startAngle - 90));
+    const arcSweep = endAngle - startAngle <= 180 ? '0' : '1';
 
+    const d = [
+        'M', start.x, start.y, 
+        'A', radius, radius, 0, arcSweep, 0, end.x, end.y
+    ].join(' ');
+
+    return d;
   }
 
   _getNearestStepAngle() {
