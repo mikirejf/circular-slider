@@ -10,13 +10,21 @@ import {
 export default class CircularSlider {
   constructor(options) {
     const strokeWidth = 50;
+    const numOfSteps = (options.max - options.min) / options.step;
+    const stepAngle = 360 / numOfSteps;
 
     this.props = Object.assign({}, options, {
-      strokeWidth,
       size: 2 * options.radius,
       trueRadius: options.radius - strokeWidth / 2,
-      knobRadius: strokeWidth / 2
+      knobRadius: strokeWidth / 2,
+      strokeWidth,
+      numOfSteps,
+      stepAngle
     });
+
+    this.state = {
+      angle: 0
+    };
 
     this._init();
   }
@@ -99,33 +107,49 @@ export default class CircularSlider {
   }
 
   _initTouchActions() {
-    const handleMove = (e) => {
-      const angleInDegrees = this._getAngleFromEvent(e);
-      const arcPath = describeSVGArcPath(
-        this.props.radius,
-        this.props.radius,
-        this.props.trueRadius,
-        0,
-        angleInDegrees
-      );
-
-      this.refs.arc.setAttributeNS(null, 'd', arcPath);
-    };
-
     document.addEventListener('touchmove', (e) => {
-      handleMove({
-        clientX: e.touches[0].clientX,
-        clientY: e.touches[0].clientY
-      })
+      this._handleTouch(e.touches[0].clientX, e.touches[0].clientY);
     });
-    document.addEventListener('mousemove', handleMove);
+    document.addEventListener('mousemove', (e) => {
+      this._handleTouch(e.clientX, e.clientY);
+    });
   }
 
-  _getAngleFromEvent(e) {
+  _handleTouch(x, y) {
+    const angle = this._calcAngleFromPoint(x, y);
+    const nearestStepAngle = this.props.stepAngle * Math.round(angle / this.props.stepAngle);
+    
+    if (nearestStepAngle !== this.state.angle) {
+      this.state.angle = nearestStepAngle;
+      this._updateSlider()
+    }
+  }
+
+  _updateSlider() {
+    const pointOnCircle = polarToCartesian(
+      this.props.radius,
+      this.props.radius,
+      this.props.trueRadius,
+      degreesToRadians(this.state.angle - 90)
+    );
+
+    this.refs.knob.setAttributeNS(null, 'cx', pointOnCircle.x);
+    this.refs.knob.setAttributeNS(null, 'cy', pointOnCircle.y);
+    this.refs.arc.setAttributeNS(null, 'd', describeSVGArcPath(
+      this.props.radius,
+      this.props.radius,
+      this.props.trueRadius,
+      0,
+      this.state.angle
+    ));
+  }
+
+  _calcAngleFromPoint(x, y) {
     const { top, left } = this.refs.svg.getBoundingClientRect();
+    // TODO: !!!! first Y then X !!!!
     const angleInRadians = Math.atan2(
-      e.clientY - (this.props.radius + top),
-      e.clientX - (this.props.radius + left)
+      y - (this.props.radius + top),
+      x - (this.props.radius + left)
     );
     // TODO: do something about normalization
     // Normalize the grid so that 0 deg is at 12 o'clock and it goes in clock's
