@@ -72,17 +72,15 @@ export default class CircularSlider {
       'stroke-width': this.props.strokeWidth 
     });
     const group = createSVGDOMElement('g');
-    const numOfSteps = (this.props.max - this.props.min) / this.props.step;
-    const stepAngle = 360 / numOfSteps;
 
     mask.appendChild(maskRect);
 
-    for (let i = 0; i < numOfSteps; i++) {
+    for (let i = 0; i < this.props.numOfSteps; i++) {
       const step = polarToCartesian(
         this.props.radius,
         this.props.radius,
         this.props.radius,
-        i * degreesToRadians(stepAngle)
+        degreesToRadians(i * this.props.stepAngle - 90)
       );
       
       mask.appendChild(createSVGDOMElement('line', {
