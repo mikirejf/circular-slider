@@ -37,43 +37,68 @@ export default class CircularSlider {
   _createSliderSVG() {
     // Need to reference each mask with unique `id` to avoid collisions.
     const uid = getGUID();
+
     const svg = createSVGDOMElement('svg', {
       width: this.props.size,
-      height: this.props.size
-    });
-    const mask = createSVGDOMElement('mask', { id: uid });
-    const maskRect = createSVGDOMElement('rect', {
-      x: 0,
-      y: 0,
-      width: this.props.size,
       height: this.props.size,
+      'pointer-events': 'none'
+    });
+
+    const mask = createSVGDOMElement('mask', { id: uid });
+
+    const maskOuterCircke = createSVGDOMElement('circle', {
+      cx: this.props.radius,
+      cy: this.props.radius,
+      r: this.props.radius,
       fill: 'white'
     });
+
+    const maskInnerCircle = createSVGDOMElement('circle', {
+      cx: this.props.radius,
+      cy: this.props.radius,
+      r: this.props.radius - this.props.strokeWidth,
+      fill: 'black'
+    });
+
     const knob = createSVGDOMElement('circle', {
       cx: this.props.radius,
       cy: this.props.knobRadius,
-      r: this.props.knobRadius,
+      r: this.props.knobRadius + 3,
       stroke: 'black',
-      fill: 'white'
+      fill: 'white',
+      'pointer-events': 'all'
     });
-    const circle = createSVGDOMElement('circle', {
+
+    const clickLayer = createSVGDOMElement('circle', {
       cx: this.props.radius,
       cy: this.props.radius,
       r: this.props.trueRadius,
-      stroke: '#babdc1',
-      'stroke-width': this.props.strokeWidth,
+      'stroke-width': 50,
+      stroke: 'transparent',
       fill: 'none',
+      'pointer-events': 'stroke'
+    });
+
+    const rect = createSVGDOMElement('rect', {
+      x: 0,
+      y: 0,
+      width: this.props.size + 6,
+      height: this.props.size + 6,
+      fill: '#babdc1',
       mask: `url(#${uid})`
     });
+
     const arc = createSVGDOMElement('path', {
       stroke: this.props.color,
       opacity: 0.7,
       fill: 'none',
       'stroke-width': this.props.strokeWidth 
     });
+
     const group = createSVGDOMElement('g');
 
-    mask.appendChild(maskRect);
+    mask.appendChild(maskOuterCircke);
+    mask.appendChild(maskInnerCircle);
 
     for (let i = 0; i < this.props.numOfSteps; i++) {
       const step = polarToCartesian(
@@ -91,15 +116,16 @@ export default class CircularSlider {
         stroke: 'black',
         'stroke-width': 4
       }));
-    }
+    };
 
-    group.appendChild(circle);
-    group.appendChild(arc);
     svg.appendChild(mask);
+    svg.appendChild(rect)
+    svg.appendChild(arc);
     svg.appendChild(group);
-    svg.appendChild(knob); 
-
-    this.refs = { svg, knob, arc };
+    group.appendChild(clickLayer);
+    group.appendChild(knob);
+    
+    this.refs = { svg, knob, arc, clickLayer, group };
 
     this.props.container.appendChild(svg);
   }
