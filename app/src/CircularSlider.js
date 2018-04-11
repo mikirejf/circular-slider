@@ -14,13 +14,15 @@ export default class CircularSlider {
 
   _init() {
     this._createSliderSVG();
+    this._initTouchActions();
   }
 
   _createSliderSVG() {
     // Need to reference each mask with unique `id` to avoid collisions.
     const uid = this._getGUID();
     const svg = this._createSVGDOMElement('svg', {
-      width: this.props.size, height: this.props.size 
+      width: this.props.size,
+      height: this.props.size
     });
     const mask = this._createSVGDOMElement('mask', { id: uid });
     const maskRect = this._createSVGDOMElement('rect', {
@@ -63,7 +65,7 @@ export default class CircularSlider {
         this.props.radius,
         this.props.radius,
         this.props.radius,
-        i * stepAngle
+        i * this._degreesToRadians(stepAngle)
       );
       
       mask.appendChild(this._createSVGDOMElement('line', {
@@ -78,7 +80,6 @@ export default class CircularSlider {
 
     group.appendChild(circle);
     group.appendChild(arc);
-
     svg.appendChild(mask);
     svg.appendChild(group);
     svg.appendChild(knob); 
@@ -86,6 +87,19 @@ export default class CircularSlider {
     this.refs = { svg, knob, arc };
 
     this.props.container.appendChild(svg);
+  }
+
+  _getAngleFromEvent(e) {
+    const { top, left } = this.refs.svg.getBoundingClientRect();
+    const angleInRadians = Math.atan2(
+      e.clientY - (this.props.radius + top),
+      e.clientX - (this.props.radius + left)
+    );
+    // Normalize the grid so that 0 deg is at 12 o'clock and it goes in clock's
+    // direction.      
+    const angleInDegrees = (this._radiansToDegrees(angleInRadians) + 450) % 360;
+
+    return angleInDegrees;
   }
 
   _getGUID() {
@@ -105,25 +119,26 @@ export default class CircularSlider {
     return svgDOM;
   }
 
-  _polarToCartesian(centerX, centerY, radius, angleInDegrees) {
-    // We normalize the polar grid so that 0 deg points at 12 o'clock.
-    const angleInRadians = (angleInDegrees - 90) * Math.PI / 180;
-
+  _polarToCartesian(centerX, centerY, radius, angleInRadians) {
     return {
       x: centerX + (radius * Math.cos(angleInRadians)),
       y: centerY + (radius * Math.sin(angleInRadians))
     };
   }
 
+  _radiansToDegrees(angleInRadians) {
+    return angleInRadians * 180 / Math.PI;
+  }
+
+  _degreesToRadians(angleInDegrees) {
+    return angleInDegrees / 180 * Math.PI;
+  }
+  
   _createArcPath() {
 
   }
 
   _getNearestStepAngle() {
-
-  }
-
-  _getGlobalOffset() {
 
   }
 }
