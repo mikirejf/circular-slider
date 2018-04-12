@@ -14,6 +14,7 @@ export default class CircularSlider {
     const stepAngle = 360 / numOfSteps;
 
     this.props = Object.assign({}, options, {
+      knobOverflow: 3,
       size: 2 * options.radius,
       trueRadius: options.radius - strokeWidth / 2,
       knobRadius: strokeWidth / 2,
@@ -41,7 +42,8 @@ export default class CircularSlider {
     const svg = createSVGDOMElement('svg', {
       width: this.props.size,
       height: this.props.size,
-      'pointer-events': 'none'
+      'pointer-events': 'none',
+      style: `padding: ${this.props.knobOverflow + 1}px`
     });
 
     const mask = createSVGDOMElement('mask', { id: uid });
@@ -63,7 +65,7 @@ export default class CircularSlider {
     const knob = createSVGDOMElement('circle', {
       cx: this.props.radius,
       cy: this.props.knobRadius,
-      r: this.props.knobRadius + 3,
+      r: this.props.knobRadius + this.props.knobOverflow,
       stroke: 'black',
       fill: 'white',
       'pointer-events': 'all'
@@ -195,9 +197,5 @@ export default class CircularSlider {
     const angleInDegrees = (radiansToDegrees(angleInRadians) + 450) % 360;
 
     return angleInDegrees;
-  }
-
-  _getNearestStepAngle() {
-
   }
 }
