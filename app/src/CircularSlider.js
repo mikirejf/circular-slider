@@ -131,12 +131,26 @@ export default class CircularSlider {
   }
 
   _initTouchActions() {
-    document.addEventListener('touchmove', (e) => {
-      this._handleTouch(e.touches[0].clientX, e.touches[0].clientY);
-    });
-    document.addEventListener('mousemove', (e) => {
+    const handleTouch = (e) => {
       this._handleTouch(e.clientX, e.clientY);
-    });
+    };
+
+    const handleMouseUp = (e) => {
+      // Need to handle the 'click' onto the knob. 
+      if (e.target === this.refs.knob) {
+        handleTouch(e);
+      }
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener('mousemove', handleTouch);
+    };
+
+    const handleMouseDown = (e) => {
+      document.addEventListener('mouseup', handleMouseUp);
+      document.addEventListener('mousemove', handleTouch);
+    };
+
+    this.refs.knob.addEventListener('mousedown', handleMouseDown);
+    this.refs.clickLayer.addEventListener('click', handleTouch);
   }
 
   _handleTouch(x, y) {
