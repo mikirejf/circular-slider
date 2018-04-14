@@ -27,15 +27,19 @@ export default class CircularSlider {
       angle: 0
     };
 
-    this._init();
+    this.handleGestureStart = this.handleGestureStart.bind(this);
+    this.handleGestureMove = this.handleGestureMove.bind(this);
+    this.handleGestureEnd = this.handleGestureEnd.bind(this);
+
+    this.init();
   }
 
-  _init() {
-    this._createSliderSVG();
-    this._initTouchActions();
+  init() {
+    this.createSliderSVG();
+    this.registerPointerEvents();
   }
 
-  _createSliderSVG() {
+  createSliderSVG() {
     // Need to reference each mask with unique `id` to avoid collisions.
     const uid = getGUID();
 
@@ -132,40 +136,84 @@ export default class CircularSlider {
     this.props.container.appendChild(svg);
   }
 
-  _initTouchActions() {
-    const handleTouch = (e) => {
-      this._handleTouch(e.clientX, e.clientY);
-    };
+  handleGestureStart(evt) {
+    evt.preventDefault();
 
-    const handleMouseUp = (e) => {
-      // Need to handle the 'click' onto the knob. 
-      if (e.target === this.refs.knob) {
-        handleTouch(e);
-      }
-      document.removeEventListener('mouseup', handleMouseUp);
-      document.removeEventListener('mousemove', handleTouch);
-    };
-
-    const handleMouseDown = (e) => {
-      document.addEventListener('mouseup', handleMouseUp);
-      document.addEventListener('mousemove', handleTouch);
-    };
-
-    this.refs.knob.addEventListener('mousedown', handleMouseDown);
-    this.refs.clickLayer.addEventListener('click', handleTouch);
+    if (window.PointerEvent) {
+      evt.target.setPointerCapture(evt.pointerId);
+    } else {
+      document.addEventListener('mousemove', this.handleGestureMove, true);
+      document.addEventListener('mouseup', this.handleGestureEnd, true);
+    }
   }
 
-  _handleTouch(x, y) {
-    const angle = this._calcAngleFromPoint(x, y);
+  handleGestureMove(evt) {
+    evt.preventDefault();
+    
+    const angle = this.calcAngleFromPoint(this.getGesturePointFromEvent(evt));
     const nearestStepAngle = this.props.stepAngle * Math.round(angle / this.props.stepAngle);
     
     if (nearestStepAngle !== this.state.angle) {
       this.state.angle = nearestStepAngle;
-      this._updateSlider()
+      this.updateSlider()
     }
   }
 
-  _updateSlider() {
+  handleGestureEnd(evt) {
+    console.log('end');
+
+    evt.preventDefault();
+
+    if (window.PointerEvent) {
+      evt.target.releasePointerCapture(evt.pointerId);
+    } else {
+      document.removeEventListener('mousemove', this.handleGestureMove, true);
+      document.removeEventListener('mouseup', this.handleGestureEnd, true);
+    }
+
+    // Change the slider if we tap/click on it
+    if (evt.target === this.refs.knob || evt.target === this.refs.clickLayer) {
+      this.handleGestureMove(evt);
+    }
+  }
+
+  registerPointerEvents() {
+    window.PointerEvent = false;
+
+    // TODO: what about multiple touch fingers?
+    // TODO: maybe attach listeners only on the knob?
+    if (window.PointerEvent) {
+      this.refs.group.addEventListener('pointerdown', this.handleGestureStart, true);
+      this.refs.group.addEventListener('pointermove', this.handleGestureMove, true);
+      this.refs.group.addEventListener('pointerup', this.handleGestureEnd, true);
+      this.refs.group.addEventListener('pointercancel', this.handleGestureEnd, true);
+    } else {
+      this.refs.group.addEventListener('touchstart', this.handleGestureStart, true);
+      this.refs.group.addEventListener('touchmove', this.handleGestureMove, true);
+      this.refs.group.addEventListener('touchend', this.handleGestureEnd, true);
+      this.refs.group.addEventListener('touchcancel', this.handleGestureEnd, true);
+
+      this.refs.group.addEventListener('mousedown', this.handleGestureStart, true);
+    }
+  }
+
+  getGesturePointFromEvent(evt) {
+    const point = {};
+
+    if (evt.targetTouches) {
+      // Prefer Touch Events
+      point.x = evt.targetTouches[0].clientX;
+      point.y = evt.targetTouches[0].clientY;
+    } else {
+      // Either Mouse event or Pointer Event
+      point.x = evt.clientX;
+      point.y = evt.clientY;
+    }
+
+    return point;
+  }
+
+  updateSlider() {
     const pointOnCircle = polarToCartesian(
       this.props.radius,
       this.props.radius,
@@ -184,12 +232,12 @@ export default class CircularSlider {
     ));
   }
 
-  _calcAngleFromPoint(x, y) {
+  calcAngleFromPoint(point) {
     const { top, left } = this.refs.svg.getBoundingClientRect();
     // TODO: !!!! first Y then X !!!!
     const angleInRadians = Math.atan2(
-      y - (this.props.radius + top),
-      x - (this.props.radius + left)
+      point.y - (this.props.radius + top),
+      point.x - (this.props.radius + left)
     );
     // TODO: do something about normalization
     // Normalize the grid so that 0 deg is at 12 o'clock and it goes in clock's
