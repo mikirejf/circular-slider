@@ -6,9 +6,12 @@ import {
   radiansToDegrees,
   getGUID
 } from './helpers';
+import EventEmitter from './EventEmitter';
 
-export default class CircularSlider {
+export default class CircularSlider extends EventEmitter {
   constructor(options) {
+    super();
+
     this.STROKE_WIDTH = 45;
     this.KNOB_OVERFLOW = 2;
     this.trueRadius = options.radius - this.STROKE_WIDTH / 2;
@@ -141,6 +144,15 @@ export default class CircularSlider {
     this.props.container.appendChild(svg);
   }
 
+  get value() {
+    // We need to round, beacuse in cases, when 360 is not perfectly divisible
+    // by the number of steps
+    return (
+      Math.round(this.state.angle / this.stepAngle) * this.props.step +
+      this.props.min
+    );
+  }
+
   registerPointerEvents() {
     // TODO: remove
     window.PointerEvent = false;
@@ -243,6 +255,8 @@ export default class CircularSlider {
       0,
       this.state.angle
     ));
+
+    this.emit('value-changed', this.value);
   }
 
   calcAngleFromPoint(point) {
