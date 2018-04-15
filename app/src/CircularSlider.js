@@ -12,6 +12,7 @@ export default class CircularSlider {
     this.STROKE_WIDTH = 45;
     this.KNOB_OVERFLOW = 2;
     this.trueRadius = options.radius - this.STROKE_WIDTH / 2;
+    // TODO: what if the numOfSteps is not an integer?
     this.numOfSteps = (options.max - options.min) / options.step;
     this.stepAngle = 360 / this.numOfSteps;
     this.props = Object.assign({}, options);
@@ -51,7 +52,7 @@ export default class CircularSlider {
       width: size,
       height: size,
       'pointer-events': 'none',
-      style: `padding: ${this.KNOB_OVERFLOW + 1}px`
+      style: `padding: ${this.KNOB_OVERFLOW + 1}px; position: absolute;`
     });
 
     const mask = createSVGDOMElement('mask', { id: uid });
