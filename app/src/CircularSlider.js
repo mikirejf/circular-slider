@@ -9,21 +9,14 @@ import {
 
 export default class CircularSlider {
   constructor(options) {
-    const strokeWidth = 50;
-    const numOfSteps = (options.max - options.min) / options.step;
-    const stepAngle = 360 / numOfSteps;
-
-    this.props = Object.assign({}, options, {
-      knobOverflow: 3,
-      size: 2 * options.radius,
-      trueRadius: options.radius - strokeWidth / 2,
-      knobRadius: strokeWidth / 2,
-      strokeWidth,
-      numOfSteps,
-      stepAngle
-    });
+    this.STROKE_WIDTH = 45;
+    this.KNOB_OVERFLOW = 2;
+    this.trueRadius = options.radius - this.STROKE_WIDTH / 2;
+    this.numOfSteps = (options.max - options.min) / options.step;
+    this.stepAngle = 360 / this.numOfSteps;
+    this.props = Object.assign({}, options);
     this.ticking = false;
-    this.latestPointerPos = false;
+    this.latestPointerPos = null;
     this.state = {
       angle: 0
     };
@@ -51,12 +44,14 @@ export default class CircularSlider {
   createSliderSVG() {
     // Need to reference each mask with unique `id` to avoid collisions.
     const uid = getGUID();
+    const size = this.props.radius * 2;
+    const knobRadius = this.STROKE_WIDTH / 2 + this.KNOB_OVERFLOW;
 
     const svg = createSVGDOMElement('svg', {
-      width: this.props.size,
-      height: this.props.size,
+      width: size,
+      height: size,
       'pointer-events': 'none',
-      style: `padding: ${this.props.knobOverflow + 1}px`
+      style: `padding: ${this.KNOB_OVERFLOW + 1}px`
     });
 
     const mask = createSVGDOMElement('mask', { id: uid });
@@ -71,14 +66,14 @@ export default class CircularSlider {
     const maskInnerCircle = createSVGDOMElement('circle', {
       cx: this.props.radius,
       cy: this.props.radius,
-      r: this.props.radius - this.props.strokeWidth,
+      r: this.props.radius - this.STROKE_WIDTH,
       fill: 'black'
     });
 
     const knob = createSVGDOMElement('circle', {
       cx: this.props.radius,
-      cy: this.props.knobRadius,
-      r: this.props.knobRadius + this.props.knobOverflow,
+      cy: knobRadius,
+      r: knobRadius + this.KNOB_OVERFLOW,
       stroke: 'black',
       fill: 'white',
       'pointer-events': 'all'
@@ -87,7 +82,7 @@ export default class CircularSlider {
     const clickLayer = createSVGDOMElement('circle', {
       cx: this.props.radius,
       cy: this.props.radius,
-      r: this.props.trueRadius,
+      r: this.trueRadius,
       'stroke-width': 50,
       stroke: 'transparent',
       fill: 'none',
@@ -97,8 +92,8 @@ export default class CircularSlider {
     const rect = createSVGDOMElement('rect', {
       x: 0,
       y: 0,
-      width: this.props.size + 6,
-      height: this.props.size + 6,
+      width: size + 6,
+      height: size + 6,
       fill: '#babdc1',
       mask: `url(#${uid})`
     });
@@ -107,7 +102,7 @@ export default class CircularSlider {
       stroke: this.props.color,
       opacity: 0.7,
       fill: 'none',
-      'stroke-width': this.props.strokeWidth 
+      'stroke-width': this.STROKE_WIDTH 
     });
 
     const group = createSVGDOMElement('g');
@@ -115,12 +110,12 @@ export default class CircularSlider {
     mask.appendChild(maskOuterCircke);
     mask.appendChild(maskInnerCircle);
 
-    for (let i = 0; i < this.props.numOfSteps; i++) {
+    for (let i = 0; i < this.numOfSteps; i++) {
       const step = polarToCartesian(
         this.props.radius,
         this.props.radius,
         this.props.radius,
-        degreesToRadians(i * this.props.stepAngle - 90)
+        degreesToRadians(i * this.stepAngle - 90)
       );
       
       mask.appendChild(createSVGDOMElement('line', {
@@ -196,10 +191,10 @@ export default class CircularSlider {
       document.removeEventListener('mouseup', this.handleGestureEnd, true);
     }
 
-    //// Change the slider if we tap/click on it
-    //if (evt.target === this.refs.knob || evt.target === this.refs.clickLayer) {
-    //  this.handleGestureMove(evt);
-    //}
+    // Change the slider if we tap/click on it
+    if (evt.target === this.refs.knob || evt.target === this.refs.clickLayer) {
+      this.handleGestureMove(evt);
+    }
   }
 
   getGesturePointFromEvent(evt) {
@@ -222,7 +217,7 @@ export default class CircularSlider {
     this.ticking = false;
 
     const angle = this.calcAngleFromPoint(this.latestPointerPos);
-    const nearestStepAngle = this.props.stepAngle * Math.round(angle / this.props.stepAngle);
+    const nearestStepAngle = this.stepAngle * Math.round(angle / this.stepAngle);
     
     // Avoid unnecessary updates
     if (nearestStepAngle === this.state.angle) {
@@ -234,7 +229,7 @@ export default class CircularSlider {
     const pointOnCircle = polarToCartesian(
       this.props.radius,
       this.props.radius,
-      this.props.trueRadius,
+      this.trueRadius,
       degreesToRadians(this.state.angle - 90)
     );
 
@@ -243,7 +238,7 @@ export default class CircularSlider {
     this.refs.arc.setAttributeNS(null, 'd', describeSVGArcPath(
       this.props.radius,
       this.props.radius,
-      this.props.trueRadius,
+      this.trueRadius,
       0,
       this.state.angle
     ));
