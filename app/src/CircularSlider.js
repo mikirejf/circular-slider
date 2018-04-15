@@ -22,7 +22,8 @@ export default class CircularSlider {
       numOfSteps,
       stepAngle
     });
-
+    this.ticking = false;
+    this.latestPointerPos = false;
     this.state = {
       angle: 0
     };
@@ -30,6 +31,7 @@ export default class CircularSlider {
     this.handleGestureStart = this.handleGestureStart.bind(this);
     this.handleGestureMove = this.handleGestureMove.bind(this);
     this.handleGestureEnd = this.handleGestureEnd.bind(this);
+    this.updateSlider = this.updateSlider.bind(this);
 
     this.init();
   }
@@ -37,6 +39,13 @@ export default class CircularSlider {
   init() {
     this.createSliderSVG();
     this.registerPointerEvents();
+  }
+
+  requestTick() {
+    if (!this.ticking) {
+      requestAnimationFrame(this.updateSlider);
+    }
+    this.ticking = true;
   }
 
   createSliderSVG() {
@@ -136,48 +145,8 @@ export default class CircularSlider {
     this.props.container.appendChild(svg);
   }
 
-  handleGestureStart(evt) {
-    evt.preventDefault();
-
-    if (window.PointerEvent) {
-      evt.target.setPointerCapture(evt.pointerId);
-    } else {
-      document.addEventListener('mousemove', this.handleGestureMove, true);
-      document.addEventListener('mouseup', this.handleGestureEnd, true);
-    }
-  }
-
-  handleGestureMove(evt) {
-    evt.preventDefault();
-    
-    const angle = this.calcAngleFromPoint(this.getGesturePointFromEvent(evt));
-    const nearestStepAngle = this.props.stepAngle * Math.round(angle / this.props.stepAngle);
-    
-    if (nearestStepAngle !== this.state.angle) {
-      this.state.angle = nearestStepAngle;
-      this.updateSlider()
-    }
-  }
-
-  handleGestureEnd(evt) {
-    console.log('end');
-
-    evt.preventDefault();
-
-    if (window.PointerEvent) {
-      evt.target.releasePointerCapture(evt.pointerId);
-    } else {
-      document.removeEventListener('mousemove', this.handleGestureMove, true);
-      document.removeEventListener('mouseup', this.handleGestureEnd, true);
-    }
-
-    // Change the slider if we tap/click on it
-    if (evt.target === this.refs.knob || evt.target === this.refs.clickLayer) {
-      this.handleGestureMove(evt);
-    }
-  }
-
   registerPointerEvents() {
+    // TODO: remove
     window.PointerEvent = false;
 
     // TODO: what about multiple touch fingers?
@@ -197,6 +166,42 @@ export default class CircularSlider {
     }
   }
 
+  handleGestureStart(evt) {
+    evt.preventDefault();
+
+    this.latestPointerPos = this.getGesturePointFromEvent(evt);
+
+    if (window.PointerEvent) {
+      evt.target.setPointerCapture(evt.pointerId);
+    } else {
+      document.addEventListener('mousemove', this.handleGestureMove, true);
+      document.addEventListener('mouseup', this.handleGestureEnd, true);
+    }
+  }
+
+  handleGestureMove(evt) {
+    evt.preventDefault();
+
+    this.latestPointerPos = this.getGesturePointFromEvent(evt);
+    this.requestTick();
+  }
+
+  handleGestureEnd(evt) {
+    evt.preventDefault();
+
+    if (window.PointerEvent) {
+      evt.target.releasePointerCapture(evt.pointerId);
+    } else {
+      document.removeEventListener('mousemove', this.handleGestureMove, true);
+      document.removeEventListener('mouseup', this.handleGestureEnd, true);
+    }
+
+    //// Change the slider if we tap/click on it
+    //if (evt.target === this.refs.knob || evt.target === this.refs.clickLayer) {
+    //  this.handleGestureMove(evt);
+    //}
+  }
+
   getGesturePointFromEvent(evt) {
     const point = {};
 
@@ -214,6 +219,18 @@ export default class CircularSlider {
   }
 
   updateSlider() {
+    this.ticking = false;
+
+    const angle = this.calcAngleFromPoint(this.latestPointerPos);
+    const nearestStepAngle = this.props.stepAngle * Math.round(angle / this.props.stepAngle);
+    
+    // Avoid unnecessary updates
+    if (nearestStepAngle === this.state.angle) {
+      return;
+    }
+
+    this.state.angle = nearestStepAngle;
+
     const pointOnCircle = polarToCartesian(
       this.props.radius,
       this.props.radius,
@@ -234,7 +251,7 @@ export default class CircularSlider {
 
   calcAngleFromPoint(point) {
     const { top, left } = this.refs.svg.getBoundingClientRect();
-    // TODO: !!!! first Y then X !!!!
+    // NOTE: The first param is y and the second is x.
     const angleInRadians = Math.atan2(
       point.y - (this.props.radius + top),
       point.x - (this.props.radius + left)
