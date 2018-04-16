@@ -55,7 +55,7 @@ export default class CircularSlider extends EventEmitter {
       width: size,
       height: size,
       'pointer-events': 'none',
-      style: `padding: ${this.KNOB_OVERFLOW + 1}px; position: absolute;`
+      style: `padding: ${this.KNOB_OVERFLOW + 2}px; position: absolute;`
     });
 
     const mask = createSVGDOMElement('mask', { id: uid });
@@ -206,7 +206,7 @@ export default class CircularSlider extends EventEmitter {
 
     // Change the slider if we tap/click on it
     if (evt.target === this.refs.knob || evt.target === this.refs.clickLayer) {
-      this.handleGestureMove(evt);
+      this.requestTick();
     }
   }
 
