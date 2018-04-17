@@ -57,6 +57,9 @@ export default class CircularSlider extends EventEmitter {
       'pointer-events': 'none',
       style: `padding: ${this.KNOB_OVERFLOW + 2}px; position: absolute;`
     });
+    // Promote to its own layer, to avoid paint phase
+    // TODO: check for support
+    svg.style.willChange = 'transform';
 
     const mask = createSVGDOMElement('mask', { id: uid });
 
@@ -132,6 +135,19 @@ export default class CircularSlider extends EventEmitter {
       }));
     };
 
+    // When you are rotating an element, its top position is calculated based on
+    // the highest edge of the current rotation state. To get the correct
+    // offset values of the rotating svg, we are wrapping it in a non rotating
+    // wrapper and calculating offsets from it.
+    const wrapper = document.createElement('div');
+    
+    Object.assign(wrapper.style, {
+      width: `${size}px`,
+      height: `${size}px`,
+      position: 'absolute'
+    });
+
+    wrapper.appendChild(svg);
     svg.appendChild(mask);
     svg.appendChild(rect)
     svg.appendChild(arc);
@@ -139,9 +155,9 @@ export default class CircularSlider extends EventEmitter {
     group.appendChild(clickLayer);
     group.appendChild(knob);
     
-    this.refs = { svg, knob, arc, clickLayer, group };
-
-    this.props.container.appendChild(svg);
+    this.refs = { svg, knob, arc, clickLayer, group, wrapper };
+    
+    this.props.container.appendChild(wrapper);
   }
 
   get value() {
@@ -246,21 +262,20 @@ export default class CircularSlider extends EventEmitter {
       degreesToRadians(this.state.angle - 90)
     );
 
-    this.refs.knob.setAttributeNS(null, 'cx', pointOnCircle.x);
-    this.refs.knob.setAttributeNS(null, 'cy', pointOnCircle.y);
+    this.refs.svg.style.transform = `rotate(${this.state.angle}deg)`;
     this.refs.arc.setAttributeNS(null, 'd', describeSVGArcPath(
       this.props.radius,
       this.props.radius,
       this.trueRadius,
-      0,
-      this.state.angle
+      -1 * this.state.angle,
+      0
     ));
 
     this.emit('value-changed', this.value);
   }
 
   calcAngleFromPoint(point) {
-    const { top, left } = this.refs.svg.getBoundingClientRect();
+    const { top, left } = this.refs.wrapper.getBoundingClientRect();
     // NOTE: The first param is y and the second is x.
     const angleInRadians = Math.atan2(
       point.y - (this.props.radius + top),
