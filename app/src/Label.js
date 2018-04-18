@@ -1,65 +1,63 @@
-export default class Label {
-  constructor(props) {
-    this.props = props;
-    this.val = '';
-    this.styles = null;
+import Component from './Component';
 
-    this.defineStyles();
+export default class Label extends Component {
+  constructor(props) {
+    super();
+
+    this.props = props;
+    this.state = {
+      value: ''
+    };
+
     this.render();
   }
 
-  set value (val) {
-    this.val = val;
-    // TODO: check textContent performance
-    this.refs.value.textContent = val;
+  set value (value) {
+    this.setState({ value: value });
   }
 
   get value () {
-    return this.val;
-  }
-
-  defineStyles() {
-    const lighterColor = (this.props.color & 0x7f7f7f) << 1;
-
-    this.styles = {
-      element: {
-        width: '400px',
-        'display': 'flex'
-      },
-      value: {
-        width: '100px',
-        'font-family': 'sans-serif',
-        'font-size': '45px'
-      },
-      colorLabel: {
-        background: `linear-gradient(${lighterColor}, ${this.props.color})`,
-        width: '40px',
-        height: '40px'
-      },
-      label: {
-        width: '40px'
-      }
-    }
+    return this.state.value;
   }
 
   render() {
-    const element = document.createElement('div');
-    const value = document.createElement('span');
-    const colorLabel = document.createElement('span');
-    const label = document.createElement('span');
+    const nodeStyle = { 
+      'list-style-type': 'none', 
+      'font-family': 'sans-serif',
+      width: '300px',
+      display: 'flex',
+      'align-items': 'flex-end'
+     };
+    const valueStyle = {
+      'font-size': '50px',
+      'font-weight': 600,
+      'text-align': 'right',
+      flex: 1
+    };
+    const legendStyle = {
+      'background-color': `${this.props.color}`,
+      width: '20px',
+      height: '13px',
+      margin: '0px 15px 10px 15px'
+    };
+    const labelStyle = {
+      'margin-bottom': '8px',
+      flex: 1
+    };
 
-    label.textContent = this.props.label;
-    
-    Object.assign(element.style, this.styles.element);
-    Object.assign(value.style, this.styles.value);
-    Object.assign(colorLabel.style, this.styles.colorLabel);
-    Object.assign(label.style, this.styles.label);
-    
-    element.appendChild(value);
-    element.appendChild(colorLabel);
-    element.appendChild(label);
-    
-    this.refs = { value };
-    this.props.container.appendChild(element);
+    this.template`
+      <li style=${nodeStyle}>
+        <span style=${valueStyle} ref="valueNode">${this.state.value}</span>
+        <span style=${legendStyle}></span>
+        <span style=${labelStyle}>${this.props.label}</span>
+      </li>
+    `;
+
+    this.props.container.appendChild(this.node);
+  }
+
+  update() {
+    // TODO: check textContent layouts
+    this.refs.valueNode.textContent = this.state.value;
   }
 }
