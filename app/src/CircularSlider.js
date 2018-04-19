@@ -6,9 +6,9 @@ import {
   radiansToDegrees,
   getGUID
 } from './helpers';
-import EventEmitter from './EventEmitter';
+import Component from './Component';
 
-export default class CircularSlider extends EventEmitter {
+export default class CircularSlider extends Component {
   constructor(options) {
     super();
 
@@ -51,7 +51,7 @@ export default class CircularSlider extends EventEmitter {
     const size = this.props.radius * 2;
     const knobRadius = this.STROKE_WIDTH / 2 + this.KNOB_OVERFLOW;
 
-    const svg = createSVGDOMElement('svg', {
+    /* const svg = createSVGDOMElement('svg', {
       width: size,
       height: size,
       'pointer-events': 'none',
@@ -133,13 +133,13 @@ export default class CircularSlider extends EventEmitter {
         stroke: 'black',
         'stroke-width': 4
       }));
-    };
+    }; */
 
     // When you are rotating an element, its top position is calculated based on
     // the highest edge of the current rotation state. To get the correct
     // offset values of the rotating svg, we are wrapping it in a non rotating
     // wrapper and calculating offsets from it.
-    const wrapper = document.createElement('div');
+/*     const wrapper = document.createElement('div');
     
     Object.assign(wrapper.style, {
       width: `${size}px`,
@@ -156,8 +156,121 @@ export default class CircularSlider extends EventEmitter {
     group.appendChild(knob);
     
     this.refs = { svg, knob, arc, clickLayer, group, wrapper };
+    this.props.container.appendChild(wrapper); */
+
+    const nodeStyle = {
+      width: `${size}px`,
+      height: `${size}px`,
+      position: 'absolute'
+    };
+
+    const svgStyle = {
+      'pointer-events': 'none',
+      padding: '4px',
+      'will-change': 'transform'
+    };
+
+
+    /* const maskOuterCircke = createSVGDOMElement('circle', {
+      cx: this.props.radius,
+      cy: this.props.radius,
+      r: this.props.radius,
+      fill: 'white'
+    });
+
+    const maskInnerCircle = createSVGDOMElement('circle', {
+      cx: this.props.radius,
+      cy: this.props.radius,
+      r: this.props.radius - this.STROKE_WIDTH,
+      fill: 'black'
+    }); */
+
+    this.template`
+      <div ref="wrapper" style=${nodeStyle}>
+        <svg ref="svg" width="${size}" height="${size}" style=${svgStyle}>
+          <mask id="${uid}">
+            <circle 
+              cx="${this.props.radius}" 
+              cy="${this.props.radius}" 
+              r="${this.props.radius}" 
+              fill="white">
+            </circle>
+            <circle 
+              cx="${this.props.radius}" 
+              cy="${this.props.radius}" 
+              r="${this.props.radius - this.STROKE_WIDTH}" 
+              fill="black">
+            </circle>
+            ${this.generateSVGMaskLines()}
+          </mask>
+          <rect 
+            x="0" 
+            y="0" 
+            width="${size + 6}" 
+            height="${size + 6}" 
+            fill="#babdc1" 
+            mask="url(#${uid})">
+          </rect>
+          <path
+            ref="arc" 
+            stroke="#ff3335" 
+            opacity="0.7" 
+            fill="none" 
+            stroke-width="${this.STROKE_WIDTH}" 
+            d="">
+          </path>
+          <g ref="group">
+            <circle 
+              ref="clickLayer"
+              cx="${this.props.radius}" 
+              cy="${this.props.radius}" 
+              r="${this.trueRadius}" 
+              stroke-width="${this.STROKE_WIDTH}" 
+              stroke="transparent" 
+              fill="none" 
+              pointer-events="stroke">
+            </circle>
+            <circle
+              ref="knob"
+              cx="${this.props.radius}" 
+              cy="${knobRadius}" 
+              r="${knobRadius + this.KNOB_OVERFLOW}" 
+              stroke="black" 
+              fill="white" 
+              pointer-events="all">
+            </circle>
+          </g>
+        </svg>
+      </div>
+    `;
     
-    this.props.container.appendChild(wrapper);
+    this.props.container.appendChild(this.node);
+  }
+
+  generateSVGMaskLines() {
+    const maskLines = [];
+
+    for (let i = 0; i < this.numOfSteps; i++) {
+      const stepPoint = polarToCartesian(
+        this.props.radius,
+        this.props.radius,
+        this.props.radius,
+        degreesToRadians(i * this.stepAngle - 90)
+      );
+      
+      maskLines.push(`
+        <line 
+          x1=${this.props.radius}
+          y1=${stepPoint.x} 
+          x2=${this.props.radius} 
+          y2=${stepPoint.y} 
+          stroke="black" 
+          stroke-width="4">
+        </line>
+      `);
+    };
+
+    return maskLines.join('');
   }
 
   get value() {

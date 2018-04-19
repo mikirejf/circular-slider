@@ -28,20 +28,21 @@ export default class Template {
   }
 
   parseTemplate(strings, vals) {
-    const stringRefRegex = /(?<=\s)ref="\w{1,}\"/;
-    const styleRegex = /(?<=\s)style\=/;
+    const stringRefRegex = /\sref="\w{1,}\"/;
+    const styleRegex = /\sstyle\=/;
     const DOMString = [];
     let refIdCounter = 0;
 
     for (let i = 0, len = strings.length; i < len; i++) {
       let string = strings[i];
+      let styleTransform = false;
 
       // Parse ref string
       string = string.replace(stringRefRegex, match => {
-        const refId = `data-ref-id="_${refIdCounter}"`;
+        const refId = ` data-ref-id="_${refIdCounter}"`;
 
         this.refMap[refIdCounter] = match.substring(
-          'ref="'.length,
+          ' ref="'.length,
           match.length - 1
         );
         refIdCounter += 1;
@@ -51,10 +52,11 @@ export default class Template {
 
       // Generate inline style
       string = string.replace(styleRegex, match => {
-        return `style="${this.generateCSSText(vals[i])}"`;
+        styleTransform = true;
+        return ` style="${this.generateCSSText(vals[i])}"`;
       });
 
-      if (string == strings[i]) {
+      if (!styleTransform) {
         string = `${string}${vals[i]}`;
       }
 
