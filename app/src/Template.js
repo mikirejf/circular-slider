@@ -12,30 +12,32 @@ export default class Template {
     // Probably safer to use DOMParser (because svg)
     dummyNode.innerHTML = DOMString;
 
-    this.refs = [...dummyNode.querySelectorAll('[data-ref-id]')].reduce(
-      (refs, element) => {
-        const refIdNum = element.dataset.refId.charAt(1);
+    [...dummyNode.querySelectorAll('[data-ref-id]')].forEach((element) => {
+      const refIdNum = element.dataset.refId.charAt(1);
+      const ref = this.refMap[refIdNum];
 
-        element.removeAttribute('data-ref-id');
-        refs[this.refMap[refIdNum]] = element;
+      if (typeof ref === 'string') {
+        this.refs[ref] = element;
+      } else {
+        ref.call(this, element);
+      }
 
-        return refs;
-      },
-      {}
-    );
+      element.removeAttribute('data-ref-id');
+    });
 
     this.node = dummyNode.firstChild;
   }
 
   parseTemplate(strings, vals) {
-    const stringRefRegex = /\sref="\w{1,}\"/;
+    const stringRefRegex = /\sref="\w{1,}\"/g;
+    const funcRefRegex = /\sref=/;
     const styleRegex = /\sstyle\=/;
     const DOMString = [];
     let refIdCounter = 0;
 
     for (let i = 0, len = strings.length; i < len; i++) {
       let string = strings[i];
-      let styleTransform = false;
+      let valueConsumed = false;
 
       // Parse ref string
       string = string.replace(stringRefRegex, match => {
@@ -50,13 +52,24 @@ export default class Template {
         return refId;
       });
 
+      // Parse ref function
+      string = string.replace(funcRefRegex, match => {
+        const refId = ` data-ref-id="_${refIdCounter}"`;
+
+        this.refMap[refIdCounter] = vals[i];
+        refIdCounter += 1;
+        valueConsumed = true;
+
+        return refId;
+      });
+
       // Generate inline style
       string = string.replace(styleRegex, match => {
-        styleTransform = true;
+        valueConsumed = true;
         return ` style="${this.generateCSSText(vals[i])}"`;
       });
 
-      if (!styleTransform) {
+      if (!valueConsumed) {
         string = `${string}${vals[i]}`;
       }
 
