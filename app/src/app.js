@@ -2,7 +2,7 @@ import CircularSlider from './CircularSlider';
 import Label from './Label';
 
 const data = [
-  { label: 'Transportation', color: '#674478', min: 0, max: 400, step: 100 },
+  { label: 'Transportation', color: '#674478', min: 0, max: 400, step: 4 },
   { label: 'Food', color: '#0078c1', min: 300, max: 1000, step: 10 },
   { label: 'Insurance', color: '#00a000', min: 0, max: 700, step: 10 },
   { label: 'Entertainment', color: '#fe8130', min: 0, max: 600, step: 10 },
@@ -29,11 +29,11 @@ data.forEach((record, i) => {
   };
 
   const slider = new CircularSlider(sliderProps);
-  const label = new Label(labelProps);
+  /* const label = new Label(labelProps);
 
   label.value = `$${slider.value}`;
 
   slider.on('value-changed', (val) => {
     label.value = `$${val}`;
-  });
+  }); */
 });

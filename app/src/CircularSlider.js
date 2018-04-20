@@ -53,17 +53,35 @@ export default class CircularSlider extends Component {
     const nodeStyle = {
       width: `${size}px`,
       height: `${size}px`,
-      position: 'absolute'
+      position: 'absolute',
+      'pointer-events': 'none',
+      overflow: 'hidden'
     };
+    const svgMaskStyle = {
+      'pointer-events': 'none',
+      padding: '4px'
+    };
+    // TODO: check for will-change support
     const svgStyle = {
       'pointer-events': 'none',
       padding: '4px',
-      'will-change': 'transform'
+      transform: `rotate(${this.state.angle - 90}deg) translateZ(0)`,
+      //'will-change': 'transform',
+      position: 'absolute',
+      top: 0, left: 0
+    };
+    const canvasStyle = {
+      width: `${size}px`,
+      height: `${size}px`,
+      'pointer-events': 'none',
+      position: 'absolute',
+      top: 0,
+      margin: '4px 0 0 4px'
     };
 
     this.template`
       <div ref="wrapper" style=${nodeStyle}>
-        <svg ref="svg" width="${size}" height="${size}" style=${svgStyle}>
+        <svg width="${size}" height="${size}" style=${svgMaskStyle}>
           <mask id="${uid}">
             <circle 
               cx="${this.props.radius}" 
@@ -87,14 +105,17 @@ export default class CircularSlider extends Component {
             fill="#babdc1" 
             mask="url(#${uid})">
           </rect>
-          <path
-            ref="arc" 
-            stroke="${this.props.color}" 
-            opacity="0.7" 
-            fill="none" 
-            stroke-width="${this.STROKE_WIDTH}" 
-            d="">
-          </path>
+        </svg>
+        <canvas 
+          width="${size * 2}" 
+          height="${size * 2}" 
+          ref=${canvas => {
+            this.refs.canvas = canvas;
+            this.refs.ctx = canvas.getContext('2d');
+          }}
+          style=${canvasStyle}>
+        </canvas>
+        <svg ref="svg" width="${size}" height="${size}" style=${svgStyle}>
           <g ref="group">
             <circle 
               ref="clickLayer"
@@ -119,7 +140,7 @@ export default class CircularSlider extends Component {
         </svg>
       </div>
     `;
-    
+
     this.props.container.appendChild(this.node);
   }
 
@@ -136,10 +157,10 @@ export default class CircularSlider extends Component {
       
       maskLines.push(`
         <line 
-          x1=${this.props.radius}
-          y1=${this.props.radius} 
-          x2=${stepPoint.x} 
-          y2=${stepPoint.y} 
+          x1="${this.props.radius}"
+          y1="${this.props.radius}"
+          x2="${stepPoint.x}"
+          y2="${stepPoint.y}"
           stroke="black" 
           stroke-width="4">
         </line>
@@ -244,21 +265,21 @@ export default class CircularSlider extends Component {
 
     this.state.angle = nearestStepAngle;
 
-    const pointOnCircle = polarToCartesian(
-      this.props.radius,
-      this.props.radius,
-      this.trueRadius,
-      degreesToRadians(this.state.angle - 90)
-    );
+    this.refs.svg.style.transform = `rotate(${this.state.angle}deg) translateZ(0)`;
 
-    this.refs.svg.style.transform = `rotate(${this.state.angle}deg)`;
-    this.refs.arc.setAttributeNS(null, 'd', describeSVGArcPath(
-      this.props.radius,
-      this.props.radius,
-      this.trueRadius,
-      -1 * this.state.angle,
-      0
-    ));
+    this.refs.ctx.clearRect(0, 0, this.refs.canvas.width, this.refs.canvas.height);
+    this.refs.ctx.beginPath();
+    this.refs.ctx.arc(
+      this.props.radius * 2, 
+      this.props.radius * 2, 
+      this.props.radius * 2 - this.STROKE_WIDTH, 
+      degreesToRadians(-90), 
+      degreesToRadians(this.state.angle - 90), 
+      false);
+    this.refs.ctx.strokeStyle = this.props.color;
+    this.refs.ctx.lineWidth = 2 * this.STROKE_WIDTH;
+    this.refs.ctx.globalAlpha = 0.7;
+    this.refs.ctx.stroke();
 
     this.emit('value-changed', this.value);
   }
