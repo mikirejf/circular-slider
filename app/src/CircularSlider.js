@@ -11,24 +11,38 @@ import Component from './Component';
 export default class CircularSlider extends Component {
   constructor(options) {
     super();
-
-    this.STROKE_WIDTH = 45;
-    this.KNOB_OVERFLOW = 2;
-    this.trueRadius = options.radius - this.STROKE_WIDTH / 2;
+    this.BASE_SLIDER_WIDTH = 45;
+    this.BASE_KNOB_OVERFLOW = 4;
+    this.BASE_SLIDER_RADIUS = 400;
+    this.BASE_KNOB_STROKE = 2;
+    
+    // TODO: check if rounding causes canvas's offset
+    // TODO: move some of the values into render()
+    this.size = this.BASE_SLIDER_RADIUS * 2;
+    this.outerRadius = this.BASE_SLIDER_RADIUS - (this.BASE_KNOB_OVERFLOW / options.percent);
+    this.innerRadius = this.outerRadius - (this.BASE_SLIDER_WIDTH / options.percent);
+    this.trueRadius = this.outerRadius - (this.outerRadius - this.innerRadius) / 2;
+    this.sliderWidth = this.BASE_SLIDER_WIDTH / options.percent;
+    this.knobYOffset = this.sliderWidth / 2 + this.BASE_KNOB_OVERFLOW / options.percent;
+    this.knobStroke = this.BASE_KNOB_STROKE / options.percent;
+    this.knobRadius = this.sliderWidth / 2 + this.BASE_KNOB_OVERFLOW / options.percent - this.knobStroke;
     // TODO: what if the numOfSteps is not an integer?
     this.numOfSteps = (options.max - options.min) / options.step;
     this.stepAngle = 360 / this.numOfSteps;
-    this.props = Object.assign({}, options);
     this.ticking = false;
     this.latestPointerPos = null;
     this.state = {
       angle: 0
     };
+    this.dimensions = null;
+    
+    this.props = Object.assign({}, options);
 
     this.handleGestureStart = this.handleGestureStart.bind(this);
     this.handleGestureMove = this.handleGestureMove.bind(this);
     this.handleGestureEnd = this.handleGestureEnd.bind(this);
     this.updateSlider = this.updateSlider.bind(this);
+    this.updateDimensions = this.updateDimensions.bind(this);
 
     this.init();
   }
@@ -36,6 +50,22 @@ export default class CircularSlider extends Component {
   init() {
     this.createSliderSVG();
     this.registerPointerEvents();
+    this.registerContainerObserver();
+  }
+
+  registerContainerObserver() {
+    window.addEventListener('resize', this.updateDimensions);
+  }
+
+  updateDimensions() {
+    const { width, height } = this.props.container.getBoundingClientRect();
+    
+    this.dimensions = Math.min(width, height) * this.props.percent;
+  
+    Object.assign(this.refs.wrapper.style, {
+      width: `${this.dimensions}px`,
+      height: `${this.dimensions}px`
+    });
   }
 
   requestTick() {
@@ -48,51 +78,55 @@ export default class CircularSlider extends Component {
   createSliderSVG() {
     // Need to reference each mask with unique `id` to avoid collisions.
     const uid = getGUID();
-    const size = this.props.radius * 2;
+
     const knobRadius = this.STROKE_WIDTH / 2 + this.KNOB_OVERFLOW;
     const nodeStyle = {
-      width: `${size}px`,
-      height: `${size}px`,
+      width: `${this.size}px`,
+      height: `${this.size}px`,
       position: 'absolute',
       'pointer-events': 'none',
       overflow: 'hidden'
     };
     const svgMaskStyle = {
       'pointer-events': 'none',
-      padding: '4px'
+      width: '100%',
+      height: '100%'
     };
-    // TODO: check for will-change support
     const svgStyle = {
       'pointer-events': 'none',
-      padding: '4px',
-      transform: `rotate(${this.state.angle - 90}deg) translateZ(0)`,
-      //'will-change': 'transform',
+      transform: `rotate(${this.state.angle}deg) translateZ(0)`,
       position: 'absolute',
-      top: 0, left: 0
+      top: 0, 
+      left: 0,
+      width: '100%',
+      height: '100%'
     };
     const canvasStyle = {
-      width: `${size}px`,
-      height: `${size}px`,
+      width: '100%',
+      height: '100%',
       'pointer-events': 'none',
       position: 'absolute',
-      top: 0,
-      margin: '4px 0 0 4px'
+      top: 0, 
+      left: 0
     };
 
     this.template`
       <div ref="wrapper" style=${nodeStyle}>
-        <svg width="${size}" height="${size}" style=${svgMaskStyle}>
+        <svg 
+          style=${svgMaskStyle} 
+          viewbox="0 0 ${this.size} ${this.size}" 
+          preserveAspectRatio="xMidYMid meet">
           <mask id="${uid}">
             <circle 
-              cx="${this.props.radius}" 
-              cy="${this.props.radius}" 
-              r="${this.props.radius}" 
+              cx="${this.BASE_SLIDER_RADIUS}" 
+              cy="${this.BASE_SLIDER_RADIUS}" 
+              r="${this.outerRadius}" 
               fill="white">
             </circle>
             <circle 
-              cx="${this.props.radius}" 
-              cy="${this.props.radius}" 
-              r="${this.props.radius - this.STROKE_WIDTH}" 
+              cx="${this.BASE_SLIDER_RADIUS}" 
+              cy="${this.BASE_SLIDER_RADIUS}" 
+              r="${this.innerRadius}" 
               fill="black">
             </circle>
             ${this.generateSVGMaskLines()}
@@ -100,39 +134,43 @@ export default class CircularSlider extends Component {
           <rect 
             x="0" 
             y="0" 
-            width="${size + 6}" 
-            height="${size + 6}" 
+            width="${this.size}" 
+            height="${this.size}" 
             fill="#babdc1" 
             mask="url(#${uid})">
           </rect>
         </svg>
         <canvas 
-          width="${size * 2}" 
-          height="${size * 2}" 
+          width="${this.size}" 
+          height="${this.size }" 
           ref=${canvas => {
             this.refs.canvas = canvas;
             this.refs.ctx = canvas.getContext('2d');
           }}
           style=${canvasStyle}>
         </canvas>
-        <svg ref="svg" width="${size}" height="${size}" style=${svgStyle}>
+        <svg ref="svg" 
+          style=${svgStyle} 
+          viewbox="0 0 ${this.size} ${this.size}" 
+          preserveAspectRatio="xMidYMid meet">
           <g ref="group">
             <circle 
               ref="clickLayer"
-              cx="${this.props.radius}" 
-              cy="${this.props.radius}" 
+              cx="${this.BASE_SLIDER_RADIUS}" 
+              cy="${this.BASE_SLIDER_RADIUS}" 
               r="${this.trueRadius}" 
-              stroke-width="${this.STROKE_WIDTH}" 
+              stroke-width="${this.sliderWidth}" 
               stroke="transparent" 
               fill="none" 
               pointer-events="stroke">
             </circle>
             <circle
               ref="knob"
-              cx="${this.props.radius}" 
-              cy="${knobRadius}" 
-              r="${knobRadius + this.KNOB_OVERFLOW}" 
-              stroke="black" 
+              cx="${this.BASE_SLIDER_RADIUS}" 
+              cy="${this.knobYOffset}" 
+              r="${this.knobRadius}" 
+              stroke="black"
+              stroke-width="${this.knobStroke}"
               fill="white" 
               pointer-events="all">
             </circle>
@@ -141,6 +179,7 @@ export default class CircularSlider extends Component {
       </div>
     `;
 
+    this.updateDimensions();
     this.props.container.appendChild(this.node);
   }
 
@@ -149,20 +188,20 @@ export default class CircularSlider extends Component {
 
     for (let i = 0; i < this.numOfSteps; i++) {
       const stepPoint = polarToCartesian(
-        this.props.radius,
-        this.props.radius,
-        this.props.radius,
+        this.BASE_SLIDER_RADIUS,
+        this.BASE_SLIDER_RADIUS,
+        this.outerRadius,
         degreesToRadians(i * this.stepAngle - 90)
       );
       
       maskLines.push(`
         <line 
-          x1="${this.props.radius}"
-          y1="${this.props.radius}"
+          x1="${this.BASE_SLIDER_RADIUS}"
+          y1="${this.BASE_SLIDER_RADIUS}"
           x2="${stepPoint.x}"
           y2="${stepPoint.y}"
           stroke="black" 
-          stroke-width="4">
+          stroke-width="${4 / this.props.percent}">
         </line>
       `);
     };
@@ -270,14 +309,14 @@ export default class CircularSlider extends Component {
     this.refs.ctx.clearRect(0, 0, this.refs.canvas.width, this.refs.canvas.height);
     this.refs.ctx.beginPath();
     this.refs.ctx.arc(
-      this.props.radius * 2, 
-      this.props.radius * 2, 
-      this.props.radius * 2 - this.STROKE_WIDTH, 
+      this.BASE_SLIDER_RADIUS, 
+      this.BASE_SLIDER_RADIUS, 
+      this.trueRadius,
       degreesToRadians(-90), 
       degreesToRadians(this.state.angle - 90), 
       false);
     this.refs.ctx.strokeStyle = this.props.color;
-    this.refs.ctx.lineWidth = 2 * this.STROKE_WIDTH;
+    this.refs.ctx.lineWidth = this.sliderWidth;
     this.refs.ctx.globalAlpha = 0.7;
     this.refs.ctx.stroke();
 
@@ -288,8 +327,10 @@ export default class CircularSlider extends Component {
     const { top, left } = this.refs.wrapper.getBoundingClientRect();
     // NOTE: The first param is y and the second is x.
     const angleInRadians = Math.atan2(
-      point.y - (this.props.radius + top),
-      point.x - (this.props.radius + left)
+      /* point.y - (this.props.radius + top),
+      point.x - (this.props.radius + left) */
+      point.y - (this.dimensions / 2 + top),
+      point.x - (this.dimensions / 2 + left)
     );
     // TODO: do something about normalization
     // Normalize the grid so that 0 deg is at 12 o'clock and it goes in clock's
