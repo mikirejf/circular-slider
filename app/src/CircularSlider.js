@@ -49,7 +49,7 @@ export default class CircularSlider extends Component {
 
   init() {
     this.createSliderSVG();
-    this.registerPointerEvents();
+    this.registerGestureEvents();
     this.registerContainerObserver();
   }
 
@@ -219,38 +219,23 @@ export default class CircularSlider extends Component {
     );
   }
 
-  registerPointerEvents() {
-    // TODO: remove
-    window.PointerEvent = false;
-
+  registerGestureEvents() {
     // TODO: what about multiple touch fingers?
     // TODO: maybe attach listeners only on the knob?
-    if (window.PointerEvent) {
-      this.refs.group.addEventListener('pointerdown', this.handleGestureStart, true);
-      this.refs.group.addEventListener('pointermove', this.handleGestureMove, true);
-      this.refs.group.addEventListener('pointerup', this.handleGestureEnd, true);
-      this.refs.group.addEventListener('pointercancel', this.handleGestureEnd, true);
-    } else {
-      this.refs.group.addEventListener('touchstart', this.handleGestureStart, true);
-      this.refs.group.addEventListener('touchmove', this.handleGestureMove, true);
-      this.refs.group.addEventListener('touchend', this.handleGestureEnd, true);
-      this.refs.group.addEventListener('touchcancel', this.handleGestureEnd, true);
+    this.refs.group.addEventListener('touchstart', this.handleGestureStart, true);
+    this.refs.group.addEventListener('touchmove', this.handleGestureMove, true);
+    this.refs.group.addEventListener('touchend', this.handleGestureEnd, true);
+    this.refs.group.addEventListener('touchcancel', this.handleGestureEnd, true);
 
-      this.refs.group.addEventListener('mousedown', this.handleGestureStart, true);
-    }
+    this.refs.group.addEventListener('mousedown', this.handleGestureStart, true);
   }
 
   handleGestureStart(evt) {
     evt.preventDefault();
 
     this.latestPointerPos = this.getGesturePointFromEvent(evt);
-
-    if (window.PointerEvent) {
-      evt.target.setPointerCapture(evt.pointerId);
-    } else {
-      document.addEventListener('mousemove', this.handleGestureMove, true);
-      document.addEventListener('mouseup', this.handleGestureEnd, true);
-    }
+    document.addEventListener('mousemove', this.handleGestureMove, true);
+    document.addEventListener('mouseup', this.handleGestureEnd, true);
   }
 
   handleGestureMove(evt) {
@@ -263,13 +248,9 @@ export default class CircularSlider extends Component {
   handleGestureEnd(evt) {
     evt.preventDefault();
 
-    if (window.PointerEvent) {
-      evt.target.releasePointerCapture(evt.pointerId);
-    } else {
-      document.removeEventListener('mousemove', this.handleGestureMove, true);
-      document.removeEventListener('mouseup', this.handleGestureEnd, true);
-    }
-
+    document.removeEventListener('mousemove', this.handleGestureMove, true);
+    document.removeEventListener('mouseup', this.handleGestureEnd, true);
+    
     // Change the slider if we tap/click on it
     if (evt.target === this.refs.knob || evt.target === this.refs.clickLayer) {
       this.requestTick();
@@ -280,11 +261,9 @@ export default class CircularSlider extends Component {
     const point = {};
 
     if (evt.targetTouches) {
-      // Prefer Touch Events
       point.x = evt.targetTouches[0].clientX;
       point.y = evt.targetTouches[0].clientY;
     } else {
-      // Either Mouse event or Pointer Event
       point.x = evt.clientX;
       point.y = evt.clientY;
     }
