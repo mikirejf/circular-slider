@@ -24,6 +24,7 @@ body {
 .sliders-container {
   width: 95%;
   height: 95%;
+  position: relative;
 }
 
 .labels-panel {

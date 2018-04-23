@@ -12,7 +12,7 @@ export default class CircularSlider extends Component {
   constructor(options) {
     super();
     this.BASE_SLIDER_WIDTH = 45;
-    this.BASE_KNOB_OVERFLOW = 4;
+    this.BASE_KNOB_OVERFLOW = 6;
     this.BASE_SLIDER_RADIUS = 400;
     this.BASE_KNOB_STROKE = 2;
     
@@ -61,10 +61,15 @@ export default class CircularSlider extends Component {
     const { width, height } = this.props.container.getBoundingClientRect();
 
     this.dimensions = Math.min(width, height) * this.props.percent;
-  
+
+    const left = (width - this.dimensions) / 2;
+    const top = (height - this.dimensions) / 2;
+    
     Object.assign(this.refs.wrapper.style, {
       width: `${this.dimensions}px`,
-      height: `${this.dimensions}px`
+      height: `${this.dimensions}px`,
+      top: `${top}px`,
+      left: `${left}px`
     });
   }
 
