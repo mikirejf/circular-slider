@@ -21,35 +21,16 @@ export default class Label extends Component {
   }
 
   render() {
-    const nodeStyle = { 
-      'list-style-type': 'none', 
-      'font-family': 'sans-serif',
-      width: '300px',
-      display: 'flex',
-      'align-items': 'flex-end'
-     };
-    const valueStyle = {
-      'font-size': '50px',
-      'font-weight': 600,
-      'text-align': 'right',
-      flex: 1
-    };
-    const legendStyle = {
-      'background-color': `${this.props.color}`,
-      width: '20px',
-      height: '13px',
-      margin: '0px 15px 10px 15px'
-    };
-    const labelStyle = {
-      'margin-bottom': '8px',
-      flex: 1
-    };
-
+    // Added classes, because "native" inline styles just don't work well
+    // with CSS responsive design
     this.template`
-      <li style=${nodeStyle}>
-        <span style=${valueStyle} ref="valueNode">${this.state.value}</span>
-        <span style=${legendStyle}></span>
-        <span style=${labelStyle}>${this.props.label}</span>
+      <li class="slider-label">
+        <span class="value" ref="valueNode">${this.state.value}</span>
+        <span 
+          class="legend" 
+          style=${{'background-color': this.props.color }}>
+        </span>
+        <span class="label">${this.props.label}</span>
       </li>
     `;
 

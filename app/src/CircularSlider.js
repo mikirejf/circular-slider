@@ -59,7 +59,7 @@ export default class CircularSlider extends Component {
 
   updateDimensions() {
     const { width, height } = this.props.container.getBoundingClientRect();
-    
+
     this.dimensions = Math.min(width, height) * this.props.percent;
   
     Object.assign(this.refs.wrapper.style, {
@@ -94,6 +94,7 @@ export default class CircularSlider extends Component {
     };
     const svgStyle = {
       'pointer-events': 'none',
+      //visibility: 'hidden',
       transform: `rotate(${this.state.angle}deg) translateZ(0)`,
       position: 'absolute',
       top: 0, 

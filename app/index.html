@@ -5,68 +5,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
   <title>Circular Slider</title>
-  <style>
-    html, body {
-      height: 100%;
-    }
-
-    body {
-      margin: 0;
-    }
-
-    .container {
-      width: 100%;
-      display: flex;
-      flex-flow: row wrap;
-      margin: 0;
-      padding: 0;
-      background: linear-gradient(#efefef, #cacbcd);
-    }
-
-    .labels {
-      /* background-color:#003476; */
-      flex-direction: column;
-    }
-
-    .sliders {
-      /* background-color: #0062d2; */
-    }
-
-     @media (orientation: landscape) {
-      .sliders {
-        width: 60%;
-        height: 100vh;
-      }
-
-      .labels {
-        width: 40%;
-        height: 100vh;
-      }
-    }
-
-    @media (orientation: portrait) {
-      .sliders {
-        width: 100%;
-        height: 60vh;
-      }
-
-      .labels {
-        width: 100%;
-        height: 40vh;
-      }
-    }
-
-    .middle-center {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-  </style>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div class="container">
-    <div class="labels middle-center"></div>
-    <div class="sliders middle-center"></div>
+    <div class="labels-panel middle-center">
+      <ul class="labels-container"></ul>
+    </div>
+    <div class="sliders-panel middle-center">
+      <div class="sliders-container middle-center"></div>
+    </div>
+    <div class="footer-panel">
+      <span>ADJUST DIAL TO ENTER EXPENSES</span>
+    </div>
   </div>
   <script src="bundle.js"></script>
 </body>
