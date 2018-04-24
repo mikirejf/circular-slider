@@ -15,9 +15,9 @@ export default class CircularSlider extends Component {
     super();
 
     this.BASE_SLIDER_WIDTH = 45;
-    this.BASE_KNOB_OVERFLOW = 6;
+    this.BASE_KNOB_OVERFLOW = 8;
     this.BASE_SLIDER_RADIUS = 400;
-    this.BASE_KNOB_STROKE = 2;
+    this.BASE_KNOB_STROKE = 3;
     
     // TODO: do something about normalization
     // TODO: check if rounding causes canvas's offset
@@ -81,13 +81,11 @@ export default class CircularSlider extends Component {
   createSliderSVG() {
     // Need to reference each mask with unique `id` to avoid collisions.
     const uid = getGUID();
-
     const wrapperStyle = {
       position: 'absolute',
       pointerEvents: 'none',
       overflow: 'hidden'
     };
-
     const baseChildStyle = {
       width: '100%',
       height: '100%',
@@ -95,15 +93,23 @@ export default class CircularSlider extends Component {
       top: 0,
       left: 0
     };
-
     const knobSvgStyle = Object.assign({}, baseChildStyle, {
       transform: `rotate(${this.state.angle}deg) translateZ(0)`
     });
+    const knobGradient = `
+      <defs>
+        <radialGradient id="mygrad" r="80%">
+          <stop offset="15%" stop-color="#fff" stop-opacity="1"></stop>
+          <stop offset="70%" stop-color="#eff0f0" stop-opacity="1"></stop>
+        </radialGradient>
+      </defs>
+    `;
     
     this.template`
       <div 
         ref="wrapper" 
         style=${wrapperStyle}>
+
         <svg 
           style=${baseChildStyle} 
           viewbox="0 0 ${this.size} ${this.size}" 
@@ -134,6 +140,7 @@ export default class CircularSlider extends Component {
             mask="url(#${uid})">
           </rect>
         </svg>
+
         <canvas 
           width="${this.size}" 
           height="${this.size }" 
@@ -143,10 +150,13 @@ export default class CircularSlider extends Component {
           }}
           style=${baseChildStyle}>
         </canvas>
-        <svg ref="svg" 
+
+        <svg 
+          ref="svg" 
           style=${knobSvgStyle} 
           viewbox="0 0 ${this.size} ${this.size}" 
           preserveAspectRatio="xMidYMid meet">
+          ${document.getElementById('mygrad') ? '' : knobGradient}
           <g ref="group">
             <circle 
               ref="clickLayer"
@@ -163,13 +173,14 @@ export default class CircularSlider extends Component {
               cx="${this.BASE_SLIDER_RADIUS}" 
               cy="${this.knobYOffset}" 
               r="${this.knobRadius}" 
-              stroke="black"
+              stroke="#b7b8b8"
               stroke-width="${this.knobStroke}"
-              fill="white" 
+              fill="url(#mygrad)" 
               pointer-events="all">
             </circle>
           </g>
         </svg>
+        
       </div>
     `;
 
@@ -198,6 +209,8 @@ export default class CircularSlider extends Component {
       `;
     }).join('');
   }
+
+
 
   get value() {
     // We need to round, beacuse in cases, when 360 is not perfectly divisible
