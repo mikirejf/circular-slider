@@ -61,3 +61,7 @@ export function generateCSSTextString(styleObj) {
     })
     .join('');
 }
+
+export function range(length) {
+  return [...Array(length).keys()];
+}

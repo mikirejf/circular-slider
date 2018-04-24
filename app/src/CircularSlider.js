@@ -4,19 +4,24 @@ import {
   polarToCartesian,
   degreesToRadians,
   radiansToDegrees,
-  getGUID
+  getGUID,
+  range
 } from './helpers';
 import Component from './Component';
 
 export default class CircularSlider extends Component {
   constructor(options) {
     super();
+    
     this.BASE_SLIDER_WIDTH = 45;
     this.BASE_KNOB_OVERFLOW = 6;
     this.BASE_SLIDER_RADIUS = 400;
     this.BASE_KNOB_STROKE = 2;
     
+    // TODO: do something about normalization
     // TODO: check if rounding causes canvas's offset
+    // TODO: what about multiple touch fingers?
+    // TODO: maybe attach listeners only on the knob?
     // TODO: move some of the values into render()
     this.size = this.BASE_SLIDER_RADIUS * 2;
     this.outerRadius = this.BASE_SLIDER_RADIUS - (this.BASE_KNOB_OVERFLOW / options.percent);
@@ -42,7 +47,7 @@ export default class CircularSlider extends Component {
     this.handleGestureMove = this.handleGestureMove.bind(this);
     this.handleGestureEnd = this.handleGestureEnd.bind(this);
     this.updateSlider = this.updateSlider.bind(this);
-    this.updateDimensions = this.updateDimensions.bind(this);
+    this.updateLayout = this.updateLayout.bind(this);
 
     this.init();
   }
@@ -54,10 +59,10 @@ export default class CircularSlider extends Component {
   }
 
   registerContainerObserver() {
-    window.addEventListener('resize', this.updateDimensions);
+    window.addEventListener('resize', this.updateLayout);
   }
 
-  updateDimensions() {
+  updateLayout() {
     const { width, height } = this.props.container.getBoundingClientRect();
 
     this.dimensions = Math.min(width, height) * this.props.percent;
@@ -84,44 +89,33 @@ export default class CircularSlider extends Component {
     // Need to reference each mask with unique `id` to avoid collisions.
     const uid = getGUID();
 
-    const knobRadius = this.STROKE_WIDTH / 2 + this.KNOB_OVERFLOW;
-    const nodeStyle = {
-      width: `${this.size}px`,
-      height: `${this.size}px`,
+    const wrapperStyle = {
       position: 'absolute',
-      'pointer-events': 'none',
+      pointerEvents: 'none',
       overflow: 'hidden'
     };
-    const svgMaskStyle = {
-      'pointer-events': 'none',
-      width: '100%',
-      height: '100%'
-    };
-    const svgStyle = {
-      'pointer-events': 'none',
-      //visibility: 'hidden',
-      transform: `rotate(${this.state.angle}deg) translateZ(0)`,
-      position: 'absolute',
-      top: 0, 
-      left: 0,
-      width: '100%',
-      height: '100%'
-    };
-    const canvasStyle = {
+
+    const baseChildStyle = {
       width: '100%',
       height: '100%',
-      'pointer-events': 'none',
       position: 'absolute',
-      top: 0, 
+      top: 0,
       left: 0
     };
 
+    const knobSvgStyle = Object.assign({}, baseChildStyle, {
+      transform: `rotate(${this.state.angle}deg) translateZ(0)`
+    });
+    
     this.template`
-      <div ref="wrapper" style=${nodeStyle}>
+      <div 
+        ref="wrapper" 
+        style=${wrapperStyle}>
         <svg 
-          style=${svgMaskStyle} 
+          style=${baseChildStyle} 
           viewbox="0 0 ${this.size} ${this.size}" 
           preserveAspectRatio="xMidYMid meet">
+          <defs>
           <mask id="${uid}">
             <circle 
               cx="${this.BASE_SLIDER_RADIUS}" 
@@ -137,6 +131,7 @@ export default class CircularSlider extends Component {
             </circle>
             ${this.generateSVGMaskLines()}
           </mask>
+        </defs>
           <rect 
             x="0" 
             y="0" 
@@ -153,10 +148,10 @@ export default class CircularSlider extends Component {
             this.refs.canvas = canvas;
             this.refs.ctx = canvas.getContext('2d');
           }}
-          style=${canvasStyle}>
+          style=${baseChildStyle}>
         </canvas>
         <svg ref="svg" 
-          style=${svgStyle} 
+          style=${knobSvgStyle} 
           viewbox="0 0 ${this.size} ${this.size}" 
           preserveAspectRatio="xMidYMid meet">
           <g ref="group">
@@ -185,22 +180,20 @@ export default class CircularSlider extends Component {
       </div>
     `;
 
-    this.updateDimensions();
+    this.updateLayout();
     this.props.container.appendChild(this.node);
   }
 
   generateSVGMaskLines() {
-    const maskLines = [];
-
-    for (let i = 0; i < this.numOfSteps; i++) {
+    return range(this.numOfSteps).map((i) => {
       const stepPoint = polarToCartesian(
         this.BASE_SLIDER_RADIUS,
         this.BASE_SLIDER_RADIUS,
         this.outerRadius,
         degreesToRadians(i * this.stepAngle - 90)
       );
-      
-      maskLines.push(`
+
+      return `
         <line 
           x1="${this.BASE_SLIDER_RADIUS}"
           y1="${this.BASE_SLIDER_RADIUS}"
@@ -209,10 +202,8 @@ export default class CircularSlider extends Component {
           stroke="black" 
           stroke-width="${4 / this.props.percent}">
         </line>
-      `);
-    };
-
-    return maskLines.join('');
+      `;
+    }).join('');
   }
 
   get value() {
@@ -225,8 +216,6 @@ export default class CircularSlider extends Component {
   }
 
   registerGestureEvents() {
-    // TODO: what about multiple touch fingers?
-    // TODO: maybe attach listeners only on the knob?
     this.refs.group.addEventListener('touchstart', this.handleGestureStart, true);
     this.refs.group.addEventListener('touchmove', this.handleGestureMove, true);
     this.refs.group.addEventListener('touchend', this.handleGestureEnd, true);
@@ -239,6 +228,7 @@ export default class CircularSlider extends Component {
     evt.preventDefault();
 
     this.latestPointerPos = this.getGesturePointFromEvent(evt);
+
     document.addEventListener('mousemove', this.handleGestureMove, true);
     document.addEventListener('mouseup', this.handleGestureEnd, true);
   }
@@ -310,14 +300,11 @@ export default class CircularSlider extends Component {
 
   calcAngleFromPoint(point) {
     const { top, left } = this.refs.wrapper.getBoundingClientRect();
-    // NOTE: The first param is y and the second is x.
+    // NOTE: The first param is Y and the second is X !!!
     const angleInRadians = Math.atan2(
-      /* point.y - (this.props.radius + top),
-      point.x - (this.props.radius + left) */
       point.y - (this.dimensions / 2 + top),
       point.x - (this.dimensions / 2 + left)
     );
-    // TODO: do something about normalization
     // Normalize the grid so that 0 deg is at 12 o'clock and it goes in clock's
     // direction.      
     const angleInDegrees = (radiansToDegrees(angleInRadians) + 450) % 360;
