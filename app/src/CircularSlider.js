@@ -79,8 +79,19 @@ export default class CircularSlider extends Component {
   }
 
   createSliderSVG() {
-    // Need to reference each mask with unique `id` to avoid collisions.
-    const uid = getGUID();
+    // Need to reference each mask with unique id to avoid collisions.
+    // We could also generate `uid` from the props, that define the mask. E.g. 
+    // `${max - min}${step}{percent * 100}`. If we init two sliders, with the 
+    // same "base" props, the second could reference the mask from the first
+    // one. That solution doesn't allow removing the sliders from the DOM (the 
+    // second slider would lost the reference to the mask, if the first one
+    // doesn't exist anymore).
+    // We could also just simply draw the mask into a canvas
+    // (image quality concerns).
+    // Maybe there is also a solution using base64, but I couldn't get it
+    // working yet.
+    const maskUid = `_mask-${getGUID()}${this.props.color}`;
+    const gradientUid = `_knob-${getGUID()}${this.props.color}`;
     const wrapperStyle = {
       position: 'absolute',
       pointerEvents: 'none',
@@ -98,7 +109,7 @@ export default class CircularSlider extends Component {
     });
     const knobGradient = `
       <defs>
-        <radialGradient id="mygrad" r="80%">
+        <radialGradient id="${gradientUid}" r="80%">
           <stop offset="15%" stop-color="#fff" stop-opacity="1"></stop>
           <stop offset="70%" stop-color="#eff0f0" stop-opacity="1"></stop>
         </radialGradient>
@@ -115,7 +126,7 @@ export default class CircularSlider extends Component {
           viewbox="0 0 ${this.size} ${this.size}" 
           preserveAspectRatio="xMidYMid meet">
           <defs>
-          <mask id="${uid}">
+          <mask id="${maskUid}">
             <circle 
               cx="${this.BASE_SLIDER_RADIUS}" 
               cy="${this.BASE_SLIDER_RADIUS}" 
@@ -137,7 +148,7 @@ export default class CircularSlider extends Component {
             width="${this.size}" 
             height="${this.size}" 
             fill="#babdc1" 
-            mask="url(#${uid})">
+            mask="url(#${maskUid})">
           </rect>
         </svg>
 
@@ -156,7 +167,7 @@ export default class CircularSlider extends Component {
           style=${knobSvgStyle} 
           viewbox="0 0 ${this.size} ${this.size}" 
           preserveAspectRatio="xMidYMid meet">
-          ${document.getElementById('mygrad') ? '' : knobGradient}
+          ${knobGradient}
           <g ref="group">
             <circle 
               ref="clickLayer"
@@ -175,12 +186,12 @@ export default class CircularSlider extends Component {
               r="${this.knobRadius}" 
               stroke="#b7b8b8"
               stroke-width="${this.knobStroke}"
-              fill="url(#mygrad)" 
+              fill="url(#${gradientUid})" 
               pointer-events="all">
             </circle>
           </g>
         </svg>
-        
+
       </div>
     `;
 
