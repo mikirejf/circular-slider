@@ -65,3 +65,23 @@ export function generateCSSTextString(styleObj) {
 export function range(length) {
   return [...Array(length).keys()];
 }
+
+export function bindOnRAF(fn) {
+  let ticking = false;
+  let args;
+
+  const invoke = () => {
+    ticking = false;
+    fn.apply(this, args)
+  };
+
+  return function () {
+    args = arguments;
+
+    if (!ticking) {
+      requestAnimationFrame(invoke);
+    }
+
+    ticking = true;
+  };
+}

@@ -5,14 +5,15 @@ import {
   degreesToRadians,
   radiansToDegrees,
   getGUID,
-  range
+  range,
+  bindOnRAF
 } from './helpers';
 import Component from './Component';
 
 export default class CircularSlider extends Component {
   constructor(options) {
     super();
-    
+
     this.BASE_SLIDER_WIDTH = 45;
     this.BASE_KNOB_OVERFLOW = 6;
     this.BASE_SLIDER_RADIUS = 400;
@@ -34,7 +35,6 @@ export default class CircularSlider extends Component {
     // TODO: what if the numOfSteps is not an integer?
     this.numOfSteps = (options.max - options.min) / options.step;
     this.stepAngle = 360 / this.numOfSteps;
-    this.ticking = false;
     this.latestPointerPos = null;
     this.state = {
       angle: 0
@@ -46,8 +46,8 @@ export default class CircularSlider extends Component {
     this.handleGestureStart = this.handleGestureStart.bind(this);
     this.handleGestureMove = this.handleGestureMove.bind(this);
     this.handleGestureEnd = this.handleGestureEnd.bind(this);
-    this.updateSlider = this.updateSlider.bind(this);
-    this.updateLayout = this.updateLayout.bind(this);
+    this.updateSlider = bindOnRAF.call(this, this.updateSlider);
+    this.updateLayout = bindOnRAF.call(this, this.updateLayout);
 
     this.init();
   }
@@ -76,13 +76,6 @@ export default class CircularSlider extends Component {
       top: `${top}px`,
       left: `${left}px`
     });
-  }
-
-  requestTick() {
-    if (!this.ticking) {
-      requestAnimationFrame(this.updateSlider);
-    }
-    this.ticking = true;
   }
 
   createSliderSVG() {
@@ -237,7 +230,7 @@ export default class CircularSlider extends Component {
     evt.preventDefault();
 
     this.latestPointerPos = this.getGesturePointFromEvent(evt);
-    this.requestTick();
+    this.updateSlider();
   }
 
   handleGestureEnd(evt) {
@@ -248,7 +241,7 @@ export default class CircularSlider extends Component {
     
     // Change the slider if we tap/click on it
     if (evt.target === this.refs.knob || evt.target === this.refs.clickLayer) {
-      this.requestTick();
+      this.updateSlider();
     }
   }
 
@@ -267,8 +260,6 @@ export default class CircularSlider extends Component {
   }
 
   updateSlider() {
-    this.ticking = false;
-
     const angle = this.calcAngleFromPoint(this.latestPointerPos);
     const nearestStepAngle = this.stepAngle * Math.round(angle / this.stepAngle);
     
