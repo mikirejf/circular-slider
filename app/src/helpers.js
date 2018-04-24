@@ -47,3 +47,17 @@ export function describeSVGArcPath(x, y, radius, startAngle, endAngle) {
 
   return d;
 }
+
+export function generateCSSTextString(styleObj) {
+  const upperToHyphenLower = (match, offset) => {
+    return `${offset > 0 ? '-' : ''}${match.toLowerCase()}`;
+  };
+
+  return Object.keys(styleObj)
+    .map((prop) => {
+      const stylePropName = prop.replace(/[A-Z]/g, upperToHyphenLower);
+
+      return `${stylePropName}:${styleObj[prop]};`;
+    })
+    .join('');
+}

@@ -1,20 +1,22 @@
+import { generateCSSTextString } from './helpers';
+
 export default class Template {
   constructor() {
-    this.refMap = {};
     this.refs = {};
   }
 
   template() {
     const [strings, ...vals] = arguments;
+    const { refMap, DOMString } = this.parseTemplate(strings, vals);
     const dummyNode = document.createElement('div');
-    const DOMString = this.parseTemplate(strings, vals);
 
-    // Probably safer to use DOMParser (because svg)
+    // Probably safer to use DOMParser (because svg), but this is KISS
     dummyNode.innerHTML = DOMString;
 
+    // Map referenced elements or invoke their "ref" function
     [...dummyNode.querySelectorAll('[data-ref-id]')].forEach((element) => {
-      const refIdNum = element.dataset.refId.charAt(1);
-      const ref = this.refMap[refIdNum];
+      const refId = element.dataset.refId.charAt(1);
+      const ref = refMap[refId];
 
       if (typeof ref === 'string') {
         this.refs[ref] = element;
@@ -25,65 +27,70 @@ export default class Template {
       element.removeAttribute('data-ref-id');
     });
 
-    this.node = dummyNode.firstChild;
+    this.node = dummyNode.firstElementChild;
   }
 
   parseTemplate(strings, vals) {
-    const stringRefRegex = /\sref="\w{1,}\"/g;
-    const funcRefRegex = /\sref=/;
-    const styleRegex = /\sstyle\=/;
-    const DOMString = [];
-    let refIdCounter = 0;
+    const visitors = [
+      { // e.g. ` ref="canvas"`
+        matcher: /\sref="\w{1,}\"/g,
+        action: (match, value, state) => {
+          state.replacement = ` data-ref-id="_${state.refId}"`;
+          state.refMap[state.refId] = match.substring(' ref="'.length, match.length - 1);
+          state.refId += 1;
+        }
+      },
+      { // e.g. ` ref=${ canvas => { this.refs.ctx = canvas.getContext('2d); }}`
+        matcher: /\sref=/,
+        action: (match, value, state) => {
+          state.replacement = ` data-ref-id="_${state.refId}"`;
+          state.refMap[state.refId] = value;
+          state.refId += 1;
+          state.valueConsumed = true;
+        }
+      },
+      { // e.g. ` style=${{ color: 'blue' }}`
+        matcher: /\sstyle\=/,
+        action: (match, value, state) => {
+          state.replacement = ` style="${generateCSSTextString(value)}"`;
+          state.valueConsumed = true;
+        }
+      }
+    ];
 
-    for (let i = 0, len = strings.length; i < len; i++) {
-      let string = strings[i];
+    const state = {
+      valueConsumed: false,
+      refId: 0,
+      refMap: {},
+      replacement: ''
+    };
+   
+    const DOMStringArr = strings.reduce((DOMStringArr, string, i) => {
+      let newString = string;
       let valueConsumed = false;
 
-      // Parse ref string
-      string = string.replace(stringRefRegex, match => {
-        const refId = ` data-ref-id="_${refIdCounter}"`;
-
-        this.refMap[refIdCounter] = match.substring(
-          ' ref="'.length,
-          match.length - 1
-        );
-        refIdCounter += 1;
-
-        return refId;
+      // Passing the string through each visitor and applying transformations if 
+      // necessary
+      visitors.forEach((visitor) => {
+        newString = newString.replace(visitor.matcher, (match) => {
+          visitor.action(match, vals[i], state);
+          
+          return state.replacement;
+        })
       });
 
-      // Parse ref function
-      string = string.replace(funcRefRegex, match => {
-        const refId = ` data-ref-id="_${refIdCounter}"`;
-
-        this.refMap[refIdCounter] = vals[i];
-        refIdCounter += 1;
-        valueConsumed = true;
-
-        return refId;
-      });
-
-      // Generate inline style
-      string = string.replace(styleRegex, match => {
-        valueConsumed = true;
-        return ` style="${this.generateCSSText(vals[i])}"`;
-      });
-
-      if (!valueConsumed) {
-        string = `${string}${vals[i]}`;
+      if (!state.valueConsumed) {
+        newString = `${newString}${vals[i]}`;
       }
+      
+      state.valueConsumed = false;
+      
+      return [...DOMStringArr, newString];
+    }, []);
 
-      DOMString.push(string);
-    }
-
-    return DOMString.join('').trim();
-  }
-
-  generateCSSText(style) {
-    return Object.keys(style)
-      .map(prop => {
-        return `${prop}:${style[prop]};`;
-      })
-      .join('');
+    return {
+      refMap: state.refMap,
+      DOMString: DOMStringArr.join('').trim()
+    };
   }
 }
