@@ -14,8 +14,8 @@ export default class Template {
     dummyNode.innerHTML = DOMString;
 
     // Map referenced elements or invoke their "ref" function
-    [...dummyNode.querySelectorAll('[data-ref-id]')].forEach((element) => {
-      const refId = element.dataset.refId.charAt(1);
+    [...dummyNode.querySelectorAll('[data-ref-id]')].forEach((element, i) => {
+      const refId = element.getAttribute('data-ref-id').charAt(1);
       const ref = refMap[refId];
 
       if (typeof ref === 'string') {
