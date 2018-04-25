@@ -2,31 +2,33 @@ import CircularSlider from './CircularSlider';
 import Label from './Label';
 
 const data = [
-  { label: 'Transportation', color: '#674478', min: 0, max: 400, step: 4, percent: 1 },
-  { label: 'Food', color: '#0078c1', min: 300, max: 1000, step: 10, percent: 0.82 },
-  { label: 'Insurance', color: '#00a000', min: 900, max: 2000, step: 10, percent: 0.65 },
-  { label: 'Entertainment', color: '#fe8130', min: 0, max: 600, step: 10, percent: 0.47 },
-  { label: 'Health care', color: '#ff3335', min: 0, max: 300, step: 10, percent: 0.3 },
+  { label: 'Transportation', color: '#674478', min: 0, max: 300, step: 100 },
+  { label: 'Food', color: '#0078c1', min: 0, max: 100, step: 50 },
+  { label: 'Insurance', color: '#00a000', min: 900, max: 2000, step: 10 },
+  { label: 'Entertainment', color: '#fe8130', min: 0, max: 600, step: 10 },
+  { label: 'Health care', color: '#ff3335', min: 0, max: 300, step: 10 },
 ];
 
 const sliderContainer = document.querySelector('.sliders-container');
 const labelContainer = document.querySelector('.labels-container');
 
-data.forEach((record, i) => {
+data.forEach((expense, i) => {
+  // Slider's radius is based on 400px. For each slider, we need 45px for its
+  // width and 30px for the gap.
+  const radius = (400 - i * 75) / 400;
   const sliderProps = {
     container: sliderContainer,
-    min: record.min,
-    max: record.max,
-    step: record.step,
-    color: record.color,
-    percent: record.percent,
-    radius: 350 - (i * 60)
+    min: expense.min,
+    max: expense.max,
+    step: expense.step,
+    color: expense.color,
+    radius: radius,
   };
 
   const labelProps = {
     container: labelContainer,
-    color: record.color,
-    label: record.label
+    color: expense.color,
+    label: expense.label
   };
 
   const slider = new CircularSlider(sliderProps);
