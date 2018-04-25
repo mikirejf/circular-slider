@@ -158,7 +158,8 @@ export default class CircularSlider extends Component {
       'user-select': 'none',
       '-moz-user-select': 'none',
       '-ms-user-select': 'none',
-      '-webkit-user-select': 'none'
+      '-webkit-user-select': 'none',
+      '-webkit-tap-highlight-color': 'transparent'
     };
     const baseChildStyle = {
       width: '100%',
