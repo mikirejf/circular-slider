@@ -76,20 +76,20 @@ body {
 
  @media (orientation: landscape) {
   .sliders-panel {
-    width: 65%;
+    width: 60%;
     height: 95vh;
   }
 
   .labels-panel {
-    width: 35%;
+    width: 40%;
     height: 95vh;
   }
 
   .footer-panel {
-    width: 65%;
+    width: 60%;
     height: 5vh;
     justify-content: center;
-    margin-left: 35%;
+    margin-left: 40%;
   }
 
   .slider-label > .label {

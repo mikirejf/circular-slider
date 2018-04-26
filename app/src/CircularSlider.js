@@ -48,7 +48,7 @@ export default class CircularSlider extends Component {
     this.handleGestureMove = this.handleGestureMove.bind(this);
     this.handleGestureEnd = this.handleGestureEnd.bind(this);
     this.updateSlider = bindOnRAF.call(this, this.updateSlider);
-    this.updateLayout = bindOnRAF.call(this, this.updateLayout);
+    this.updateLayout = this.updateLayout.bind(this);
 
     this.init();
   }

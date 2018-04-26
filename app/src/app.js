@@ -2,8 +2,8 @@ import CircularSlider from './CircularSlider';
 import Label from './Label';
 
 const data = [
-  { label: 'Transportation', color: '#674478', min: 0, max: 300, step: 100 },
-  { label: 'Food', color: '#0078c1', min: 0, max: 100, step: 50 },
+  { label: 'Transportation', color: '#674478', min: 300, max: 1300, step: 10 },
+  { label: 'Food', color: '#0078c1', min: 0, max: 800, step: 8 },
   { label: 'Insurance', color: '#00a000', min: 900, max: 2000, step: 10 },
   { label: 'Entertainment', color: '#fe8130', min: 0, max: 600, step: 10 },
   { label: 'Health care', color: '#ff3335', min: 0, max: 300, step: 10 },
