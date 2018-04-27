@@ -4,7 +4,8 @@ import {
   radiansToDegrees,
   getGUID,
   range,
-  bindOnRAF
+  bindOnRAF,
+  getPointFromEvent
 } from './helpers';
 import Template from './mixins/Template';
 import EventEmitter from './mixins/EventEmitter';
@@ -14,31 +15,31 @@ import EventEmitter from './mixins/EventEmitter';
 // TODO: what about multiple touch fingers?
 // TODO: maybe attach listeners only on the knob?
 class CircularSlider {
-  constructor(options) {
+  constructor(props) {
     this.BASE_SLIDER_RADIUS = 400;
     this.BASE_SLIDER_WIDTH = 45;
     this.BASE_DASH_STROKE = 4;
     this.BASE_KNOB_OVERFLOW = 8;
     this.BASE_KNOB_STROKE = 3;
 
-    this.numOfSteps = (options.max - options.min) / options.step;
+    this.numOfSteps = (props.max - props.min) / props.step;
     this.stepAngle = 360 / this.numOfSteps;
     this.size = this.BASE_SLIDER_RADIUS * 2;
-    this.outerRadius = this.BASE_SLIDER_RADIUS - (this.BASE_KNOB_OVERFLOW / options.radius);
-    this.innerRadius = this.outerRadius - (this.BASE_SLIDER_WIDTH / options.radius);
+    this.outerRadius = this.BASE_SLIDER_RADIUS - (this.BASE_KNOB_OVERFLOW / props.radius);
+    this.innerRadius = this.outerRadius - (this.BASE_SLIDER_WIDTH / props.radius);
     this.middleRadius = this.outerRadius - (this.outerRadius - this.innerRadius) / 2;
-    this.sliderWidth = this.BASE_SLIDER_WIDTH / options.radius;
-    this.knobYOffset = this.sliderWidth / 2 + this.BASE_KNOB_OVERFLOW / options.radius;
-    this.knobStroke = this.BASE_KNOB_STROKE / options.radius;
-    this.knobRadius = this.sliderWidth / 2 + this.BASE_KNOB_OVERFLOW / options.radius - this.knobStroke;
+    this.sliderWidth = this.BASE_SLIDER_WIDTH / props.radius;
+    this.knobYOffset = this.sliderWidth / 2 + this.BASE_KNOB_OVERFLOW / props.radius;
+    this.knobStroke = this.BASE_KNOB_STROKE / props.radius;
+    this.knobRadius = this.sliderWidth / 2 + this.BASE_KNOB_OVERFLOW / props.radius - this.knobStroke;
     
-    this.latestPointerPos = null;
     this.state = {
-      angle: 0
+      angle: 0,
+      sideDimension: null,
+      latestPointerPos: null
     };
-    this.wrapperSideDim = null;
     
-    this.props = Object.assign({}, options);
+    this.props = Object.assign({}, props);
 
     this.handleGestureStart = this.handleGestureStart.bind(this);
     this.handleGestureMove = this.handleGestureMove.bind(this);
@@ -80,7 +81,7 @@ class CircularSlider {
   handleGestureStart(evt) {
     evt.preventDefault();
 
-    this.latestPointerPos = this.getGesturePointFromEvent(evt);
+    this.state.latestPointerPos = getPointFromEvent(evt);
 
     document.addEventListener('mousemove', this.handleGestureMove, true);
     document.addEventListener('mouseup', this.handleGestureEnd, true);
@@ -89,7 +90,7 @@ class CircularSlider {
   handleGestureMove(evt) {
     evt.preventDefault();
 
-    this.latestPointerPos = this.getGesturePointFromEvent(evt);
+    this.state.latestPointerPos = getPointFromEvent(evt);
     this.updateSlider();
   }
 
@@ -105,26 +106,12 @@ class CircularSlider {
     }
   }
 
-  getGesturePointFromEvent(evt) {
-    const point = {};
-
-    if (evt.targetTouches) {
-      point.x = evt.targetTouches[0].clientX;
-      point.y = evt.targetTouches[0].clientY;
-    } else {
-      point.x = evt.clientX;
-      point.y = evt.clientY;
-    }
-
-    return point;
-  }
-
   calcAngleFromPoint(point) {
     const { top, left } = this.refs.wrapper.getBoundingClientRect();
     // NOTE: The first param is Y and the second is X !!!
     const angleInRadians = Math.atan2(
-      point.y - (this.wrapperSideDim / 2 + top),
-      point.x - (this.wrapperSideDim / 2 + left)
+      point.y - (this.state.sideDimension / 2 + top),
+      point.x - (this.state.sideDimension / 2 + left)
     );
     // Normalizes the grid so that 0 deg is at 12 o'clock and it goes in clock's
     // direction.      
@@ -135,18 +122,17 @@ class CircularSlider {
 
   render() {
     // Need to reference each mask with unique id to avoid collisions.
-    // We could also generate `uid` from the props, that define the mask. E.g. 
+    // We could also generate `uid` from the props that define the mask. E.g. 
     // `${max - min}${step}{percent * 100}`. If we init two sliders, with the 
     // same "base" props, the second could reference the mask from the first
     // one. That solution doesn't allow removing the sliders from the DOM (the 
     // second slider would lost the reference to the mask, if the first one
     // doesn't exist anymore).
     // We could also just simply draw the mask into a canvas
-    // (image quality concerns).
-    // Maybe there is also a solution using base64, but I couldn't get it
+    // (image quality concerns?).
+    // Maybe there is also a solution using base64, but I couldn't get it 
     // working yet.
-    const maskUid = `_mask-${getGUID()}${this.props.color}`;
-    const gradientUid = `_knob-${getGUID()}${this.props.color}`;
+    const uid = `${getGUID()}${this.props.color}`;
     const wrapperStyle = {
       position: 'absolute',
       pointerEvents: 'none',
@@ -208,7 +194,7 @@ class CircularSlider {
           viewbox="0 0 ${this.size} ${this.size}" 
           preserveAspectRatio="xMidYMid meet">
           <defs>
-          <mask id="${maskUid}">
+          <mask id="_mask-${uid}">
             <circle 
               cx="${this.BASE_SLIDER_RADIUS}" 
               cy="${this.BASE_SLIDER_RADIUS}" 
@@ -230,7 +216,7 @@ class CircularSlider {
             width="${this.size}" 
             height="${this.size}" 
             fill="#babdc1" 
-            mask="url(#${maskUid})">
+            mask="url(#_mask-${uid})">
           </rect>
         </svg>
 
@@ -247,7 +233,7 @@ class CircularSlider {
           viewbox="0 0 ${this.size} ${this.size}" 
           preserveAspectRatio="xMidYMid meet">
           <defs>
-            <radialGradient id="${gradientUid}" r="80%">
+            <radialGradient id="_gradient-${uid}" r="80%">
               <stop offset="15%" stop-color="#fff" stop-opacity="1"></stop>
               <stop offset="70%" stop-color="#eff0f0" stop-opacity="1"></stop>
             </radialGradient>
@@ -270,7 +256,7 @@ class CircularSlider {
               r="${this.knobRadius}" 
               stroke="#b7b8b8"
               stroke-width="${this.knobStroke}"
-              fill="url(#${gradientUid})" 
+              fill="url(#_gradient-${uid})" 
               pointer-events="all">
             </circle>
           </g>
@@ -284,7 +270,7 @@ class CircularSlider {
   }
 
   updateSlider() {
-    const angle = this.calcAngleFromPoint(this.latestPointerPos);
+    const angle = this.calcAngleFromPoint(this.state.latestPointerPos);
     const nearestStepAngle = this.stepAngle * Math.round(angle / this.stepAngle);
     
     // Avoid unnecessary updates
@@ -312,18 +298,18 @@ class CircularSlider {
 
   updateLayout() {
     const { width, height } = this.props.container.getBoundingClientRect();
-
-    this.wrapperSideDim = Math.min(width, height) * this.props.radius;
-
-    const left = (width - this.wrapperSideDim) / 2;
-    const top = (height - this.wrapperSideDim) / 2;
+    const sideDimension = Math.min(width, height) * this.props.radius;
+    const left = (width - sideDimension) / 2;
+    const top = (height - sideDimension) / 2;
     
     Object.assign(this.refs.wrapper.style, {
-      width: `${this.wrapperSideDim}px`,
-      height: `${this.wrapperSideDim}px`,
+      width: `${sideDimension}px`,
+      height: `${sideDimension}px`,
       top: `${top}px`,
       left: `${left}px`
     });
+
+    this.state.sideDimension = sideDimension;
   }
 }
 

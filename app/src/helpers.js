@@ -20,6 +20,20 @@ export function getGUID() {
   });
 }
 
+export function getPointFromEvent(evt) {
+  const point = {};
+
+  if (evt.targetTouches) {
+    point.x = evt.targetTouches[0].clientX;
+    point.y = evt.targetTouches[0].clientY;
+  } else {
+    point.x = evt.clientX;
+    point.y = evt.clientY;
+  }
+
+  return point;
+}
+
 export function range(length) {
   return [...Array(length).keys()];
 }
