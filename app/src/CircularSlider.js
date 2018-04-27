@@ -1,6 +1,4 @@
 import {
-  createSVGDOMElement,
-  describeSVGArcPath,
   polarToCartesian,
   degreesToRadians,
   radiansToDegrees,
@@ -8,17 +6,15 @@ import {
   range,
   bindOnRAF
 } from './helpers';
-import Component from './Component';
+import Template from './mixins/Template';
+import EventEmitter from './mixins/EventEmitter';
 
 // TODO: do something about normalization
 // TODO: check if rounding causes canvas's offset
 // TODO: what about multiple touch fingers?
 // TODO: maybe attach listeners only on the knob?
-// TODO: move some of the values into render()
-export default class CircularSlider extends Component {
+class CircularSlider {
   constructor(options) {
-    super();
-
     this.BASE_SLIDER_RADIUS = 400;
     this.BASE_SLIDER_WIDTH = 45;
     this.BASE_DASH_STROKE = 4;
@@ -330,3 +326,7 @@ export default class CircularSlider extends Component {
     });
   }
 }
+
+Object.assign(CircularSlider.prototype, Template, EventEmitter);
+
+export default CircularSlider;

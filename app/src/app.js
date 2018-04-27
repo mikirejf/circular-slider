@@ -24,7 +24,6 @@ data.forEach((expense, i) => {
     color: expense.color,
     radius: radius,
   };
-
   const labelProps = {
     container: labelContainer,
     color: expense.color,
@@ -33,7 +32,7 @@ data.forEach((expense, i) => {
 
   const slider = new CircularSlider(sliderProps);
   const label = new Label(labelProps);
-
+  
   label.value = `$${slider.value}`;
 
   slider.on('value-changed', (val) => {

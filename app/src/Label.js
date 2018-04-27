@@ -1,9 +1,7 @@
-import Component from './Component';
+import Template from "./mixins/Template";
 
-export default class Label extends Component {
+class Label {
   constructor(props) {
-    super();
-
     this.props = props;
     this.state = {
       value: ''
@@ -13,7 +11,8 @@ export default class Label extends Component {
   }
 
   set value (value) {
-    this.setState({ value: value });
+    this.state.value = value;
+    this.update();
   }
 
   get value () {
@@ -42,3 +41,7 @@ export default class Label extends Component {
     this.refs.valueNode.textContent = this.state.value;
   }
 }
+
+Object.assign(Label.prototype, Template);
+
+export default Label;
