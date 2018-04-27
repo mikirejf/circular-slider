@@ -1,17 +1,15 @@
 html, body {
   height: 100%;
-}
-
-body {
   margin: 0;
+  font-family: sans-serif;
 }
 
 .container {
   width: 100%;
-  display: flex;
-  flex-flow: row wrap;
   margin: 0;
   padding: 0;
+  display: flex;
+  flex-flow: row wrap;
   background: linear-gradient(#efefef, #cacbcd);
 }
 
@@ -22,21 +20,28 @@ body {
 }
 
 .sliders-container {
-  width: 95%;
-  height: 95%;
   position: relative;
+}
+
+.wrapper {
+  position: relative;
+  flex-direction: column;
 }
 
 .labels-panel {
   flex-direction: column;
 }
 
-.footer-panel {
+.sliders-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.footer {
   width: 100%;
   display: flex;
   justify-content: center;
   align-items: center;
-  font-family: sans-serif;
   font-weight: 800;
   font-style: italic;
 }
@@ -49,75 +54,105 @@ body {
 
 .slider-label {
   list-style-type: none;
-  font-family: sans-serif;
   width: 100%;
   display: flex;
   align-items: flex-end;
 }
 
 .slider-label > .value {
-  font-size: 6vw;
   font-weight: 600;
   text-align: right;
   flex: 1;
 }
 
-.slider-label > .legend {
-  width: 20px;
-  height: 13px;
-  margin: 0px 15px 10px 15px;
-}
-
-.slider-label > .label {
-  font-size: 1.5vw;
-  margin-bottom: 8px;
-  flex: 1;
-}
-
  @media (orientation: landscape) {
-  .sliders-panel {
-    width: 60%;
-    height: 95vh;
-  }
-
   .labels-panel {
     width: 40%;
-    height: 95vh;
+    height: 100vh;
   }
 
-  .footer-panel {
+  .sliders-panel {
     width: 60%;
-    height: 5vh;
-    justify-content: center;
-    margin-left: 40%;
+    height: 100vh;
+  }
+
+  .labels-container {
+    margin-top: calc(-1 * (2vw + 2.5vh));
+  }
+
+  .slider-label > .value {
+    font-size: 5.5vw;
+  }
+
+  .slider-label > .legend {
+    margin: 0 2vw 1.5vw 2vw;
+    width: 2.8vw;
+    height: 1.7vw;
   }
 
   .slider-label > .label {
-    flex: 0.5;
+    margin-bottom: 1.3vw;
+    font-size: 2vw;
+    flex: 0.7;
+  }
+
+  .sliders-container {
+    width: 100%;
+    max-height: 55vw;
+    height: calc(100% - 2vw - 2.5vh);
+  }
+
+  .wrapper {
+    width: 55vw;
+    height: 95%;
+  }
+
+  .footer {
+    font-size: 2vw;
+    margin-top: 2.5vh;
   }
 }
 
 @media (orientation: portrait) {
-  .sliders-panel {
-    width: 100%;
-    height: 60vh;
-  }
-
   .labels-panel {
     width: 100%;
     height: 35vh;
   }
 
-  .footer-panel {
-    height: 5vh;
+  .sliders-panel {
+    width: 100%;
+    height: 65vh;
   }
 
   .slider-label > .value {
-    font-size: 5vh;
+    font-size: 5.5vh;
+  }
+
+  .slider-label > .legend {
+    margin: 0 2vh 1.3vh 2vh;
+    width: 2.8vh;
+    height: 1.7vh;
   }
 
   .slider-label > .label {
-    font-size: 1.5vh;
+    font-size: 2vh;
+    margin-bottom: 1vh;
     flex: 1;
+  }
+
+  .sliders-container {
+    width: 95vw;
+    height: 95vw;
+  }
+
+  .wrapper {
+    justify-content: flex-start;
+    width: 95%;
+    height: 95%;
+  }
+
+  .footer {
+    font-size: 2vh;
+    margin-top: 1.5vh;
   }
 }

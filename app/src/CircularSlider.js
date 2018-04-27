@@ -19,7 +19,7 @@ class CircularSlider {
     this.BASE_SLIDER_RADIUS = 400;
     this.BASE_SLIDER_WIDTH = 45;
     this.BASE_DASH_STROKE = 4;
-    this.BASE_KNOB_OVERFLOW = 8;
+    this.BASE_KNOB_OVERFLOW = 10;
     this.BASE_KNOB_STROKE = 3;
 
     this.numOfSteps = (props.max - props.min) / props.step;
