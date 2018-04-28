@@ -5,7 +5,7 @@ module.exports = {
   context: appPath,
   entry: './src/app.js',
   output: {
-    path: '/',
+    path: appPath,
     filename: 'bundle.js',
     publicPath: '/'
   },
