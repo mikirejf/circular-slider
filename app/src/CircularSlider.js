@@ -298,7 +298,7 @@ class CircularSlider {
 
   updateLayout() {
     const { width, height } = this.props.container.getBoundingClientRect();
-    const sideDimension = Math.min(width, height) * this.props.radius;
+    const sideDimension = Math.round(Math.min(width, height) * this.props.radius);
     const left = (width - sideDimension) / 2;
     const top = (height - sideDimension) / 2;
     
