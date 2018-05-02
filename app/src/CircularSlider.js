@@ -5,7 +5,8 @@ import {
   getGUID,
   range,
   bindOnRAF,
-  getPointFromEvent
+  getPointFromEvent,
+  describeSVGArcPath
 } from './helpers';
 import Template from './mixins/Template';
 import EventEmitter from './mixins/EventEmitter';
@@ -24,21 +25,16 @@ class CircularSlider {
 
     this.numOfSteps = (props.max - props.min) / props.step;
     this.stepAngle = 360 / this.numOfSteps;
-    this.size = this.BASE_SLIDER_RADIUS * 2;
     this.outerRadius = this.BASE_SLIDER_RADIUS - (this.BASE_KNOB_OVERFLOW / props.radius);
     this.innerRadius = this.outerRadius - (this.BASE_SLIDER_WIDTH / props.radius);
     this.middleRadius = this.outerRadius - (this.outerRadius - this.innerRadius) / 2;
     this.sliderWidth = this.BASE_SLIDER_WIDTH / props.radius;
-    this.knobYOffset = this.sliderWidth / 2 + this.BASE_KNOB_OVERFLOW / props.radius;
-    this.knobStroke = this.BASE_KNOB_STROKE / props.radius;
-    this.knobRadius = this.sliderWidth / 2 + this.BASE_KNOB_OVERFLOW / props.radius - this.knobStroke;
     
     this.state = {
       angle: 0,
       sideDimension: null,
       latestPointerPos: null
     };
-    
     this.props = Object.assign({}, props);
 
     this.handleGestureStart = this.handleGestureStart.bind(this);
@@ -121,6 +117,10 @@ class CircularSlider {
   }
 
   render() {
+    const dimension = this.BASE_SLIDER_RADIUS * 2;
+    const knobYOffset = this.sliderWidth / 2 + this.BASE_KNOB_OVERFLOW / this.props.radius;
+    const knobStroke = this.BASE_KNOB_STROKE / this.props.radius;
+    const knobRadius = this.sliderWidth / 2 + this.BASE_KNOB_OVERFLOW / this.props.radius - knobStroke;
     // Need to reference each mask with unique id to avoid collisions.
     // We could also generate `uid` from the props that define the mask. E.g. 
     // `${max - min}${step}{percent * 100}`. If we init two sliders, with the 
@@ -151,16 +151,9 @@ class CircularSlider {
       left: 0
     };
     const knobSvgStyle = Object.assign({}, baseChildStyle, {
-      transform: `rotate(${this.state.angle}deg) translateZ(0)`
+      transform: `rotate(${this.state.angle}deg)`,
+      willChange: 'transform'
     });
-    
-    const initCanvas = (canvas) => {
-      this.refs.canvas = canvas;
-      this.refs.ctx = canvas.getContext('2d');
-      this.refs.ctx.strokeStyle = this.props.color;
-      this.refs.ctx.lineWidth = this.sliderWidth;
-      this.refs.ctx.globalAlpha = 0.8;
-    };
 
     const generateSVGMaskLines = () => {
       return range(this.numOfSteps).map((i) => {
@@ -191,7 +184,7 @@ class CircularSlider {
 
         <svg 
           style=${baseChildStyle} 
-          viewbox="0 0 ${this.size} ${this.size}" 
+          viewbox="0 0 ${dimension} ${dimension}" 
           preserveAspectRatio="xMidYMid meet">
           <defs>
           <mask id="_mask-${uid}">
@@ -213,24 +206,17 @@ class CircularSlider {
           <rect 
             x="0" 
             y="0" 
-            width="${this.size}" 
-            height="${this.size}" 
+            width="${dimension}" 
+            height="${dimension}" 
             fill="#babdc1" 
             mask="url(#_mask-${uid})">
           </rect>
         </svg>
 
-        <canvas 
-          width="${this.size}" 
-          height="${this.size }" 
-          ref=${initCanvas}
-          style=${baseChildStyle}>
-        </canvas>
-
         <svg 
           ref="knobSvg" 
           style=${knobSvgStyle} 
-          viewbox="0 0 ${this.size} ${this.size}" 
+          viewbox="0 0 ${dimension} ${dimension}" 
           preserveAspectRatio="xMidYMid meet">
           <defs>
             <radialGradient id="_gradient-${uid}" r="80%">
@@ -238,6 +224,14 @@ class CircularSlider {
               <stop offset="70%" stop-color="#eff0f0" stop-opacity="1"></stop>
             </radialGradient>
           </defs>
+          <path
+            ref="arc" 
+            stroke="${this.props.color}" 
+            opacity="0.7" 
+            fill="none" 
+            stroke-width="${this.sliderWidth}" 
+            d="">
+          </path>
           <g ref="clickLayer">
             <circle 
               ref="circleLayer"
@@ -252,10 +246,10 @@ class CircularSlider {
             <circle
               ref="knob"
               cx="${this.BASE_SLIDER_RADIUS}" 
-              cy="${this.knobYOffset}" 
-              r="${this.knobRadius}" 
+              cy="${knobYOffset}" 
+              r="${knobRadius}" 
               stroke="#b7b8b8"
-              stroke-width="${this.knobStroke}"
+              stroke-width="${knobStroke}"
               fill="url(#_gradient-${uid})" 
               pointer-events="all">
             </circle>
@@ -280,18 +274,14 @@ class CircularSlider {
 
     this.state.angle = nearestStepAngle;
 
-    this.refs.knobSvg.style.transform = `rotate(${this.state.angle}deg) translateZ(0)`;
-
-    this.refs.ctx.clearRect(0, 0, this.refs.canvas.width, this.refs.canvas.height);
-    this.refs.ctx.beginPath();
-    this.refs.ctx.arc(
-      this.BASE_SLIDER_RADIUS, 
-      this.BASE_SLIDER_RADIUS, 
+    this.refs.knobSvg.style.transform = `rotate(${this.state.angle}deg)`;
+    this.refs.arc.setAttributeNS(null, 'd', describeSVGArcPath(
+      this.BASE_SLIDER_RADIUS,
+      this.BASE_SLIDER_RADIUS,
       this.middleRadius,
-      degreesToRadians(-90), 
-      degreesToRadians(this.state.angle - 90), 
-      false);
-    this.refs.ctx.stroke();
+      -1 * this.state.angle,
+      0
+    ));
 
     this.emit('value-changed', this.value);
   }

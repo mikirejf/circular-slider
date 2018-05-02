@@ -57,3 +57,16 @@ export function bindOnRAF(fn) {
     ticking = true;
   };
 }
+
+export function describeSVGArcPath(x, y, radius, startAngle, endAngle) {
+  const start = polarToCartesian(x, y, radius, degreesToRadians(endAngle));
+  const end = polarToCartesian(x, y, radius, degreesToRadians(startAngle));
+  const arcSweep = endAngle - startAngle <= 180 ? '0' : '1';
+
+  const d = [
+      'M', start.x, start.y, 
+      'A', radius, radius, 0, arcSweep, 0, end.x, end.y
+  ].join(' ');
+
+  return d;
+}
