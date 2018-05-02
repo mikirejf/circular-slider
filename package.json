@@ -4,8 +4,10 @@
   "description": "A task for a Front-End Engineer job at Celtra.",
   "main": "index.js",
   "scripts": {
-    "dev": "webpack-dev-server --hot --inline",
-    "build": "webpack --mode production" 
+    "dev": "webpack-dev-server --env.mode=development --hot --inline",
+    "dev-babel": "webpack-dev-server --env.mode=development --env.babel=true --hot --inline",
+    "build": "webpack --mode=production",
+    "build-babel": "webpack --mode=production --env.babel=true"
   },
   "keywords": [
     "celtra",
@@ -15,6 +17,9 @@
   "author": "Andrej Premrn <andrej.premrn@gmail.com>",
   "license": "MIT",
   "devDependencies": {
+    "babel-core": "^6.26.3",
+    "babel-loader": "^7.1.4",
+    "babel-preset-env": "^1.6.1",
     "webpack": "^4.5.0",
     "webpack-cli": "^2.0.14",
     "webpack-dev-server": "^3.1.3"

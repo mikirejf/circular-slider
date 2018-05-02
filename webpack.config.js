@@ -1,7 +1,7 @@
 const path = require('path');
 const appPath = path.resolve(__dirname, 'app');
 
-module.exports = {
+const config = {
   context: appPath,
   entry: './src/app.js',
   output: {
@@ -10,11 +10,30 @@ module.exports = {
     publicPath: '/'
   },
   mode: 'development',
-  devtool: 'inline-source-map',
   devServer: {
     host: '0.0.0.0',
     contentBase: appPath,
     watchContentBase: true,
     clientLogLevel: 'none'
   }
+};
+
+module.exports = (env = {}) => {
+  if (env.mode === 'development') {
+    config.devtool = 'inline-source-map';
+  }
+
+  if (env.babel === 'true') {
+    config.module = {
+      rules: [{
+          test: /\.js$/,
+          exclude: /node_modules/,
+          use: {
+            loader: "babel-loader"
+          }
+      }]
+    };    
+  }
+
+  return config;
 };
