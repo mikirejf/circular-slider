@@ -37,7 +37,6 @@ class Label {
   }
 
   update() {
-    // TODO: check textContent layouts
     this.refs.valueNode.textContent = this.state.value;
   }
 }

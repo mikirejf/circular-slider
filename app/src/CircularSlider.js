@@ -11,10 +11,6 @@ import {
 import Template from './mixins/Template';
 import EventEmitter from './mixins/EventEmitter';
 
-// TODO: do something about normalization
-// TODO: check if rounding causes canvas's offset
-// TODO: what about multiple touch fingers?
-// TODO: maybe attach listeners only on the knob?
 class CircularSlider {
   constructor(props) {
     this.BASE_SLIDER_RADIUS = 400;
@@ -49,10 +45,7 @@ class CircularSlider {
   get value() {
     // We need to round, beacuse in some cases, 360 is not perfectly divisible
     // by the number of steps
-    return (
-      Math.round(this.state.angle / this.stepAngle) * this.props.step +
-      this.props.min
-    );
+    return Math.round(this.state.angle / this.stepAngle) * this.props.step + this.props.min;
   }
 
   init() {
@@ -128,10 +121,10 @@ class CircularSlider {
     // one. That solution doesn't allow removing the sliders from the DOM (the 
     // second slider would lost the reference to the mask, if the first one
     // doesn't exist anymore).
-    // We could also just simply draw the mask into a canvas
-    // (image quality concerns?).
+    // We could also just simply draw the mask into a canvas or convert it into 
+    // a raster image.
     // Maybe there is also a solution using base64, but I couldn't get it 
-    // working yet.
+    // to work yet.
     const uid = `${getGUID()}${this.props.color}`;
     const wrapperStyle = {
       position: 'absolute',
@@ -192,13 +185,13 @@ class CircularSlider {
               cx="${this.BASE_SLIDER_RADIUS}" 
               cy="${this.BASE_SLIDER_RADIUS}" 
               r="${this.outerRadius}" 
-              fill="white">
+              style=${{ fill: 'white' }} >
             </circle>
             <circle 
               cx="${this.BASE_SLIDER_RADIUS}" 
               cy="${this.BASE_SLIDER_RADIUS}" 
-              r="${this.innerRadius}" 
-              fill="black">
+              r="${this.innerRadius}"
+              style=${{ fill: 'black' }}>
             </circle>
             ${generateSVGMaskLines()}
           </mask>
@@ -208,8 +201,7 @@ class CircularSlider {
             y="0" 
             width="${dimension}" 
             height="${dimension}" 
-            fill="#babdc1" 
-            mask="url(#_mask-${uid})">
+            style=${{ fill: '#babdc1', mask: `url(#_mask-${uid})` }}>
           </rect>
         </svg>
 
@@ -220,38 +212,44 @@ class CircularSlider {
           preserveAspectRatio="xMidYMid meet">
           <defs>
             <radialGradient id="_gradient-${uid}" r="80%">
-              <stop offset="15%" stop-color="#fff" stop-opacity="1"></stop>
-              <stop offset="70%" stop-color="#eff0f0" stop-opacity="1"></stop>
+              <stop offset="15%" stop-color="#fff" stop-opacity="1" />
+              <stop offset="70%" stop-color="#eff0f0" stop-opacity="1" />
             </radialGradient>
           </defs>
           <path
             ref="arc" 
-            stroke="${this.props.color}" 
-            opacity="0.7" 
-            fill="none" 
-            stroke-width="${this.sliderWidth}" 
-            d="">
+            d=""
+            style=${{
+              stroke: this.props.color,
+              opacity: 0.8,
+              fill: 'none',
+              strokeWidth: this.sliderWidth
+            }}>
           </path>
           <g ref="clickLayer">
             <circle 
               ref="circleLayer"
               cx="${this.BASE_SLIDER_RADIUS}" 
               cy="${this.BASE_SLIDER_RADIUS}" 
-              r="${this.middleRadius}" 
-              stroke-width="${this.sliderWidth}" 
-              stroke="transparent" 
-              fill="none" 
-              pointer-events="stroke">
+              r="${this.middleRadius}"
+              style=${{
+                strokeWidth: this.sliderWidth,
+                stroke: 'transparent',
+                fill: 'none',
+                pointerEvents: 'stroke'
+              }}>
             </circle>
             <circle
               ref="knob"
               cx="${this.BASE_SLIDER_RADIUS}" 
               cy="${knobYOffset}" 
-              r="${knobRadius}" 
-              stroke="#b7b8b8"
-              stroke-width="${knobStroke}"
-              fill="url(#_gradient-${uid})" 
-              pointer-events="all">
+              r="${knobRadius}"
+              style=${{
+                stroke: '#b7b8b8',
+                strokeWidth: knobStroke,
+                fill: `url(#_gradient-${uid})`,
+                pointerEvents: 'all'
+              }}>
             </circle>
           </g>
         </svg>
@@ -275,12 +273,16 @@ class CircularSlider {
     this.state.angle = nearestStepAngle;
 
     this.refs.knobSvg.style.transform = `rotate(${this.state.angle}deg)`;
+    // There is a problem with drawing a full 360deg arc, because we are drawing
+    // the arc from "itself" to "itself" (?). To correct that, we are 
+    // subtracting `0.00001` (can't go lower) from `endAngle`, so we never have 
+    // a full 360 value. 
     this.refs.arc.setAttributeNS(null, 'd', describeSVGArcPath(
       this.BASE_SLIDER_RADIUS,
       this.BASE_SLIDER_RADIUS,
       this.middleRadius,
-      -1 * this.state.angle,
-      0
+      -1 * this.state.angle - 90, // Subtracting 90deg to start at 12'o clock
+      0 - 90.00001
     ));
 
     this.emit('value-changed', this.value);

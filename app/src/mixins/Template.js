@@ -1,13 +1,18 @@
 const visitors = [
-  { // e.g. ` ref="canvas"`
+  {
+    // e.g. ` ref="canvas"`
     matcher: /\sref="\w{1,}\"/g,
     action: (match, value, state) => {
       state.replacement = ` data-ref-id="_${state.refId}"`;
-      state.refMap[state.refId] = match.substring(' ref="'.length, match.length - 1);
+      state.refMap[state.refId] = match.substring(
+        ' ref="'.length,
+        match.length - 1
+      );
       state.refId += 1;
     }
   },
-  { // e.g. ` ref=${ canvas => { this.refs.ctx = canvas.getContext('2d); }}`
+  {
+    // e.g. ` ref=${ canvas => { this.refs.ctx = canvas.getContext('2d); }}`
     matcher: /\sref=/,
     action: (match, value, state) => {
       state.replacement = ` data-ref-id="_${state.refId}"`;
@@ -16,7 +21,8 @@ const visitors = [
       state.valueConsumed = true;
     }
   },
-  { // e.g. ` style=${{ color: 'blue' }}`
+  {
+    // e.g. ` style=${{ color: 'blue' }}`
     matcher: /\sstyle\=/,
     action: (match, value, state) => {
       state.replacement = ` style="${generateCSSTextString(value)}"`;
@@ -32,25 +38,25 @@ function parseTemplate(strings, vals) {
     refMap: {},
     replacement: ''
   };
-  
+
   const DOMStringArr = strings.reduce((DOMStringArr, string, i) => {
     let newString = string;
-    // Passing the string through each visitor and applying transformations if 
+    // Passing the string through each visitor and applying transformations if
     // necessary
     visitors.forEach((visitor) => {
       newString = newString.replace(visitor.matcher, (match) => {
         visitor.action(match, vals[i], state);
-        
+
         return state.replacement;
-      })
+      });
     });
 
     if (!state.valueConsumed) {
       newString = `${newString}${vals[i]}`;
     }
-    
+
     state.valueConsumed = false;
-    
+
     return [...DOMStringArr, newString];
   }, []);
 
