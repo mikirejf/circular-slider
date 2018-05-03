@@ -1,5 +1,7 @@
 # Web Developer Task - Circular Slider
 
+![Screenshoot of the app](screenshoot.png)
+
 ## Introduction
 
 This is my solution of a reusable circular slider class. The slider and also the rest of the app are fully responsive. It was tested in the last 2 versions of the most popular browsers.
